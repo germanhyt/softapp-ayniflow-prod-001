@@ -1,0 +1,72 @@
+{
+  "monto_cero": [
+    {
+      "subject": "Realizaste un consumo con tu Tarjeta de Débito BCP - Servicio de Notificaciones BCP",
+      "body_preview": "\r\n\r\n<!DOCTYPE html>\r\n<html>\r\n <head>\r\n  <title></title>\r\n  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\r\n  <meta name=\"format-detection\" content=\"telephone=no\">\r\n  <style type=\"text/css\">\r\n\t\t\tbody {background:white; margin: 0; padding: 0;}\r\n\t\t\timg {height: auto;}\r\n\t\t\tu + #body a {color:inherit; cursor:text !important; text-decoration:none; font-size:inherit; font-family:inherit; font-weight:inherit; line-height:inherit;}\r\n\t\t\t.ExternalClass *{line-height:100%;}\r\n\t\t\ta {tex",
+      "parsed": {
+        "banco": "BCP",
+        "tipo": "CONSUMO_DEBITO",
+        "monto": 0.0,
+        "num_operacion": "TD-0000-20260619-141252-000",
+        "fecha": "2026-06-19"
+      }
+    },
+    {
+      "subject": "Realizaste un consumo con tu Tarjeta de Débito BCP - Servicio de Notificaciones BCP",
+      "body_preview": "\r\n\r\n<!DOCTYPE html>\r\n<html>\r\n <head>\r\n  <title></title>\r\n  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\r\n  <meta name=\"format-detection\" content=\"telephone=no\">\r\n  <style type=\"text/css\">\r\n\t\t\tbody {background:white; margin: 0; padding: 0;}\r\n\t\t\timg {height: auto;}\r\n\t\t\tu + #body a {color:inherit; cursor:text !important; text-decoration:none; font-size:inherit; font-family:inherit; font-weight:inherit; line-height:inherit;}\r\n\t\t\t.ExternalClass *{line-height:100%;}\r\n\t\t\ta {tex",
+      "parsed": {
+        "banco": "BCP",
+        "tipo": "CONSUMO_DEBITO",
+        "monto": 0.0,
+        "num_operacion": "TD-0000-20260618-200417-000",
+        "fecha": "2026-06-18"
+      }
+    },
+    {
+      "subject": "Realizaste un consumo con tu Tarjeta de Débito BCP - Servicio de Notificaciones BCP",
+      "body_preview": "\r\n\r\n<!DOCTYPE html>\r\n<html>\r\n <head>\r\n  <title></title>\r\n  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\r\n  <meta name=\"format-detection\" content=\"telephone=no\">\r\n  <style type=\"text/css\">\r\n\t\t\tbody {background:white; margin: 0; padding: 0;}\r\n\t\t\timg {height: auto;}\r\n\t\t\tu + #body a {color:inherit; cursor:text !important; text-decoration:none; font-size:inherit; font-family:inherit; font-weight:inherit; line-height:inherit;}\r\n\t\t\t.ExternalClass *{line-height:100%;}\r\n\t\t\ta {tex",
+      "parsed": {
+        "banco": "BCP",
+        "tipo": "CONSUMO_DEBITO",
+        "monto": 0.0,
+        "num_operacion": "TD-0000-20260618-173040-000",
+        "fecha": "2026-06-18"
+      }
+    }
+  ],
+  "sin_num_operacion": [
+    {
+      "subject": "Constancia de Yapeo a Celular - Servicio de Notificaciones BCP",
+      "body_preview": "\r\n\r\n<!DOCTYPE html>\r\n<html>\r\n <head>\r\n  <title></title>\r\n  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\r\n  <meta name=\"format-detection\" content=\"telephone=no\">\r\n  <style type=\"text/css\">\r\n\t\t\tbody {background:#f2f2f2; margin: 0; padding: 0;}\r\n\t\t\timg {height: auto;}\r\n\t\t\tu + #body a {color:inherit; cursor:text !important; text-decoration:none; font-size:inherit; font-family:inherit; font-weight:inherit; line-height:inherit;}\r\n\t\t\t.ExternalClass *{line-height:100%;}\r\n\t\t\ta {t",
+      "parsed": {
+        "banco": "BCP",
+        "tipo": "YAPEO_CELULAR",
+        "monto": 0.0,
+        "num_operacion": "N/A",
+        "fecha": "2026-06-16"
+      }
+    },
+    {
+      "subject": "Constancia de Pago con QR - Servicios de Notificaciones BCP",
+      "body_preview": "\r\n<!DOCTYPE html>\r\n<html>\r\n <head>\r\n  <title></title>\r\n  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\r\n  <meta name=\"format-detection\" content=\"telephone=no\">\r\n  <style type=\"text/css\">\r\n\t\t\tbody {background:#f2f2f2; margin: 0; padding: 0;}\r\n\t\t\timg {height: auto;}\r\n\t\t\tu + #body a {color:inherit; cursor:text !important; text-decoration:none; font-size:inherit; font-family:inherit; font-weight:inherit; line-height:inherit;}\r\n\t\t\t.ExternalClass *{line-height:100%;}\r\n\t\t\ta {tex",
+      "parsed": {
+        "banco": "BCP",
+        "tipo": "PAGO_QR",
+        "monto": 0.0,
+        "num_operacion": "N/A",
+        "fecha": "2026-06-13"
+      }
+    },
+    {
+      "subject": "Constancia de Yapeo a Celular - Servicio de Notificaciones BCP",
+      "body_preview": "\r\n<!DOCTYPE html>\r\n<html>\r\n <head>\r\n  <title></title>\r\n  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\r\n  <meta name=\"format-detection\" content=\"telephone=no\">\r\n  <style type=\"text/css\">\r\n\t\t\tbody {background:#f2f2f2; margin: 0; padding: 0;}\r\n\t\t\timg {height: auto;}\r\n\t\t\tu + #body a {color:inherit; cursor:text !important; text-decoration:none; font-size:inherit; font-family:inherit; font-weight:inherit; line-height:inherit;}\r\n\t\t\t.ExternalClass *{line-height:100%;}\r\n\t\t\ta {tex",
+      "parsed": {
+        "banco": "BCP",
+        "tipo": "YAPEO_CELULAR",
+        "monto": 0.0,
+        "num_operacion": "N/A",
+        "fecha": "2026-06-13"
+      }
+    }
+  ]
+}

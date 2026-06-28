@@ -1,0 +1,46 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: ayniflow-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-ayniflow}
+      MYSQL_USER: ${MYSQL_USER:-ayniflow}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 8
+
+  backend:
+    build:
+      context: ./backend
+    container_name: ayniflow-api
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-ayniflow}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-ayniflow}
+      CORS_ORIGINS: ${PUBLIC_APP_URL:-http://localhost}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ''
+    container_name: ayniflow-web
+    restart: unless-stopped
+    ports:
+      - '${APP_PORT:-8080}:80'
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
