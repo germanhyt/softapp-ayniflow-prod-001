@@ -207,8 +207,15 @@ body {
   }
 
   .integration-config-field .env-hint {
-    @apply text-xs;
+    @apply break-all text-xs;
     color: var(--premium-text-muted);
+  }
+
+  .integrations-page code,
+  .integrations-page .env-hint,
+  .integrations-page .integration-status-card p,
+  .integrations-page .text-muted {
+    @apply break-all;
   }
 
   .nav-link {
@@ -409,7 +416,7 @@ body {
   }
 
   .admin-topbar {
-    @apply sticky top-0 z-20;
+    @apply sticky top-0 z-20 overflow-visible;
   }
 
   .admin-content {
@@ -486,8 +493,9 @@ body {
   }
 
   .table-shell {
-    @apply overflow-hidden rounded-xl;
+    @apply overflow-x-auto rounded-xl;
     border: 1px solid var(--premium-border);
+    -webkit-overflow-scrolling: touch;
   }
 
   .table-head {
@@ -545,10 +553,24 @@ body {
   }
 
   .notifications-dropdown {
-    @apply absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-xl shadow-lg;
+    @apply absolute z-50 mt-2 overflow-hidden rounded-xl shadow-lg;
     top: calc(100% + 0.35rem);
+    right: 0;
+    width: min(20rem, calc(100vw - 1.5rem));
     border: 1px solid var(--premium-border);
     background-color: var(--premium-surface);
+  }
+
+  @media (max-width: 767px) {
+    .notifications-dropdown {
+      position: fixed;
+      top: 3.75rem;
+      right: 0.75rem;
+      left: auto;
+      margin-top: 0;
+      width: min(20rem, calc(100vw - 1.5rem));
+      max-width: calc(100vw - 1.5rem);
+    }
   }
 
   .notifications-header {
@@ -594,7 +616,7 @@ body {
   }
 
   .notification-message {
-    @apply mt-1 text-xs;
+    @apply mt-1 break-words text-xs;
     color: var(--premium-text-muted);
   }
 

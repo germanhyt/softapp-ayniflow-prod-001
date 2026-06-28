@@ -6,8 +6,8 @@ import { useLogin } from '../application/hooks/useAuth'
 export function LoginPage() {
   const navigate = useNavigate()
   const login = useLogin()
-  const [username, setUsername] = useState('admin')
-  const [password, setPassword] = useState('Admin123!')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -34,6 +34,7 @@ export function LoginPage() {
           value={username}
           onChange={(event) => setUsername(event.target.value)}
           className="input-field"
+          placeholder="Usuario"
           autoComplete="username"
           required
         />
@@ -49,6 +50,7 @@ export function LoginPage() {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           className="input-field"
+          placeholder="Contraseña"
           autoComplete="current-password"
           required
         />

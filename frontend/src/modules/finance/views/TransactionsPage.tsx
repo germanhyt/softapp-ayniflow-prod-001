@@ -293,7 +293,7 @@ export function TransactionsPage() {
       )}
 
       <section className="table-shell">
-        <table className="min-w-full text-left text-sm">
+        <table className="min-w-[960px] w-full text-left text-sm">
           <thead className="table-head">
             <tr>
               {canWrite && (

@@ -58,7 +58,7 @@ export function UsersPage() {
         <p className="text-sm text-muted">Cargando usuarios...</p>
       ) : (
         <div className="table-shell">
-          <table className="min-w-full text-left text-sm">
+          <table className="min-w-[640px] w-full text-left text-sm">
             <thead className="table-head">
               <tr>
                 <th className="px-4 py-3 font-medium">Usuario</th>

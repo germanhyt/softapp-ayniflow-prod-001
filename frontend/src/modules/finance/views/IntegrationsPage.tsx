@@ -304,7 +304,7 @@ export function IntegrationsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="integrations-page space-y-6">
       <div>
         <h2 className="text-xl font-semibold">Integraciones</h2>
         <p className="text-sm text-muted">
