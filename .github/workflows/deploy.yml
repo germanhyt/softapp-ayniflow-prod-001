@@ -22,6 +22,5 @@ jobs:
             cd "$APP_DIR"
             git fetch origin main
             git reset --hard origin/main
-            docker compose -f docker-compose.prod.yml --env-file .env.production pull --ignore-buildable || true
             docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
-            docker compose -f docker-compose.prod.yml ps
+            docker compose -f docker-compose.prod.yml --env-file .env.production ps

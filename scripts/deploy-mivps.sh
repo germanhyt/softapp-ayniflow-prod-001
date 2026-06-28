@@ -15,4 +15,4 @@ fi
 git fetch origin main
 git reset --hard origin/main
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --build
-docker compose -f "$COMPOSE_FILE" ps
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" ps
