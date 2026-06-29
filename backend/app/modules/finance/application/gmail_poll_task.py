@@ -76,6 +76,20 @@ async def run_gmail_poll_loop() -> None:
                 db.close()
         except Exception as exc:
             _poll_runtime_state["last_checked_at"] = serialize_datetime(now_app())
-            _poll_runtime_state["last_error"] = str(exc)
+            err_str = str(exc)
+            if "invalid_grant" in err_str.lower():
+                try:
+                    db = SessionLocal()
+                    try:
+                        FinanceRepository(db).delete_gmail_credential()
+                    finally:
+                        db.close()
+                except Exception as cleanup_exc:
+                    logger.warning("No se pudo limpiar credencial Gmail inválida: %s", cleanup_exc)
+                _poll_runtime_state["last_error"] = (
+                    "Token Gmail expirado o revocado. Reconecta Gmail en Integraciones."
+                )
+            else:
+                _poll_runtime_state["last_error"] = err_str
             _poll_runtime_state["last_result"] = {"status": "error"}
             logger.warning("Gmail poll falló: %s", exc)
