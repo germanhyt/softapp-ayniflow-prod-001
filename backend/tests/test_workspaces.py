@@ -1,3 +1,20 @@
+def test_create_user_returns_friendly_validation_message(client, admin_headers):
+    response = client.post(
+        "/users",
+        headers=admin_headers,
+        json={
+            "email": "correo-invalido",
+            "username": "ab",
+            "password": "corta",
+            "role_slug": "reader",
+        },
+    )
+    assert response.status_code == 422, response.text
+    message = response.json()["message"]
+    assert "Email" in message
+    assert "Contraseña" in message or "Usuario" in message
+
+
 def test_update_user_allows_editing_role_and_status(client, admin_headers):
     created = client.post(
         "/users",
