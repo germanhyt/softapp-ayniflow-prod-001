@@ -18,6 +18,7 @@ from app.core.exception_handlers import (
 from app.core.health import build_health_payload
 from app.core.logging import configure_logging, logger
 from app.core.middleware import RateLimitMiddleware, RequestLoggingMiddleware
+from app.modules.auth.application.workspace_seed import ensure_workspace_schema
 from app.modules.auth.application.seed import seed_auth_data
 from app.modules.auth.domain.models import Permission, Role, User  # noqa: F401
 from app.modules.auth.presentation.routes import roles_router, router as auth_router, users_router
@@ -54,6 +55,7 @@ async def lifespan(_: FastAPI):
     configure_logging(settings.log_json)
     Base.metadata.create_all(bind=engine)
     ensure_finance_schema()
+    ensure_workspace_schema()
     seed_auth_data()
     seed_finance_catalogs()
     seed_integration_settings()

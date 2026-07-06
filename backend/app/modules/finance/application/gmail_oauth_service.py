@@ -13,19 +13,22 @@ from app.shared.exceptions import AppException
 OAUTH_STATE_PURPOSE = "gmail_oauth"
 
 
-def create_oauth_state() -> str:
+def create_oauth_state(workspace_id: int | None = None) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=10)
     payload = {"purpose": OAUTH_STATE_PURPOSE, "exp": expire}
+    if workspace_id is not None:
+        payload["workspace_id"] = workspace_id
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
-def verify_oauth_state(state: str) -> None:
+def verify_oauth_state(state: str) -> dict:
     try:
         payload = jwt.decode(state, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
     except Exception as exc:
         raise AppException("State OAuth inválido o expirado", status_code=400) from exc
     if payload.get("purpose") != OAUTH_STATE_PURPOSE:
         raise AppException("State OAuth inválido", status_code=400)
+    return payload
 
 
 class GmailOAuthService:
@@ -64,7 +67,7 @@ class GmailOAuthService:
             "scope": " ".join(GMAIL_SCOPES),
             "access_type": "offline",
             "prompt": "consent",
-            "state": create_oauth_state(),
+            "state": create_oauth_state(self.repository.workspace_id),
         }
         return f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
 
@@ -103,6 +106,17 @@ class GmailOAuthService:
         connected_email = self._fetch_profile_email(refresh_token)
         self.repository.save_gmail_credential(refresh_token, connected_email)
         return connected_email or "Gmail conectado"
+
+    @staticmethod
+    def extract_workspace_id_from_state(state: str) -> int | None:
+        payload = verify_oauth_state(state)
+        workspace_id = payload.get("workspace_id")
+        if workspace_id is None:
+            return None
+        try:
+            return int(workspace_id)
+        except (TypeError, ValueError):
+            return None
 
     def _fetch_profile_email(self, refresh_token: str) -> str | None:
         try:

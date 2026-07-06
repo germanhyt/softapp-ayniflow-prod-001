@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.security import hash_password
-from app.modules.auth.domain.models import Permission, Role, User
+from app.modules.auth.domain.models import Permission, Role, User, user_roles
 
 
 class AuthRepository:
@@ -53,23 +53,78 @@ class AuthRepository:
         username: str,
         password: str,
         full_name: str | None,
-        role_slugs: list[str],
+        role_slug: str,
     ) -> User:
-        roles = self.db.query(Role).filter(Role.slug.in_(role_slugs)).all()
-        if len(roles) != len(set(role_slugs)):
-            raise ValueError("Uno o más roles no existen")
+        role = self.db.query(Role).filter(Role.slug == role_slug).first()
+        if role is None:
+            raise ValueError("El rol indicado no existe")
 
         user = User(
             email=email,
             username=username,
             hashed_password=hash_password(password),
             full_name=full_name,
-            roles=roles,
+            roles=[role],
         )
         self.db.add(user)
         self.db.commit()
         self.db.refresh(user)
         return user
+
+    def update_user(
+        self,
+        user: User,
+        *,
+        full_name: str | None = None,
+        is_active: bool | None = None,
+        role_slug: str | None = None,
+    ) -> User:
+        if full_name is not None:
+            user.full_name = full_name
+        if is_active is not None:
+            user.is_active = is_active
+        if role_slug is not None:
+            role = self.db.query(Role).filter(Role.slug == role_slug).first()
+            if role is None:
+                raise ValueError("El rol indicado no existe")
+            user.roles = [role]
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def update_password(self, user: User, password: str) -> User:
+        user.hashed_password = hash_password(password)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def delete_user(self, user: User) -> None:
+        from app.modules.finance.domain.models import (
+            Budget,
+            FinanceGmailCredential,
+            FinanceNotification,
+            LoanRecord,
+            SavingsGoal,
+            Transaction,
+        )
+
+        user_id = user.id
+        for model in (
+            Transaction,
+            FinanceNotification,
+            Budget,
+            SavingsGoal,
+            LoanRecord,
+        ):
+            self.db.query(model).filter(model.workspace_id == user_id).delete(
+                synchronize_session=False
+            )
+        self.db.query(FinanceGmailCredential).filter(
+            FinanceGmailCredential.workspace_id == user_id
+        ).delete(synchronize_session=False)
+        user.roles.clear()
+        self.db.delete(user)
+        self.db.commit()
 
     def upsert_permission(self, code: str, description: str) -> Permission:
         permission = self.db.query(Permission).filter(Permission.code == code).first()

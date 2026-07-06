@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { PasswordInput } from '../../../core/components/PasswordInput'
 import { useLogin } from '../application/hooks/useAuth'
 
 export function LoginPage() {
@@ -44,12 +45,10 @@ export function LoginPage() {
         <label htmlFor="password" className="mb-1 block text-sm font-medium">
           Contraseña
         </label>
-        <input
+        <PasswordInput
           id="password"
-          type="password"
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          className="input-field"
+          onChange={setPassword}
           placeholder="Contraseña"
           autoComplete="current-password"
           required

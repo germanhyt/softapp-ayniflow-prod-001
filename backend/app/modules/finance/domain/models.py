@@ -22,6 +22,7 @@ class Transaction(Base):
     __tablename__ = "transactions"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    workspace_id: Mapped[int] = mapped_column(index=True, nullable=False, default=1)
     transaction_date: Mapped[date] = mapped_column(Date, index=True, nullable=False)
     transaction_time: Mapped[time | None] = mapped_column(Time, nullable=True)
     movement_type: Mapped[MovementType] = mapped_column(SqlEnum(MovementType), index=True, nullable=False)
@@ -45,6 +46,7 @@ class Budget(Base):
     __tablename__ = "budgets"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    workspace_id: Mapped[int] = mapped_column(index=True, nullable=False, default=1)
     month_year: Mapped[str] = mapped_column(String(7), index=True, nullable=False)
     category: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
     budgeted_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
@@ -58,6 +60,7 @@ class SavingsGoal(Base):
     __tablename__ = "savings_goals"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    workspace_id: Mapped[int] = mapped_column(index=True, nullable=False, default=1)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     target_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     current_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)
@@ -73,6 +76,7 @@ class LoanRecord(Base):
     __tablename__ = "loan_records"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    workspace_id: Mapped[int] = mapped_column(index=True, nullable=False, default=1)
     loan_type: Mapped[str] = mapped_column(String(20), nullable=False, default=LoanType.PAYABLE.value, index=True)
     lender: Mapped[str] = mapped_column(String(120), nullable=False)
     principal_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
@@ -133,6 +137,7 @@ class FinanceNotification(Base):
     __tablename__ = "finance_notifications"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    workspace_id: Mapped[int] = mapped_column(index=True, nullable=False, default=1)
     kind: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     message: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -159,6 +164,7 @@ class FinanceGmailCredential(Base):
     __tablename__ = "finance_gmail_credentials"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    workspace_id: Mapped[int] = mapped_column(index=True, nullable=False, default=1)
     refresh_token: Mapped[str] = mapped_column(Text, nullable=False)
     connected_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

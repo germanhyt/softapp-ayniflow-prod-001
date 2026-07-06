@@ -98,6 +98,36 @@ docker compose down
 
 Credenciales de desarrollo: `admin` / `Admin123!`
 
+### Seed demo (casos de prueba)
+
+Para cargar datos de demostración que cubren gráficos, presupuestos (OK/riesgo/excedido), ahorros, préstamos/cobranzas y usuarios RBAC:
+
+```bash
+cd backend
+source .venv/Scripts/activate    # ajusta según tu shell
+
+# Primera carga (solo si la BD no tiene transacciones)
+python scripts/seed_demo_data.py
+
+# Reemplazar datos financieros existentes
+python scripts/seed_demo_data.py --force
+```
+
+| Usuario | Contraseña | Rol |
+|---------|------------|-----|
+| `admin` | `Admin123!` | Acceso total |
+| `operador` | `Operador123!` | Finanzas lectura + escritura |
+| `lector` | `Lector123!` | Solo lectura |
+
+El seed demo incluye **dos workspaces mock** con datos aislados:
+
+| Workspace | Tipo | Usuarios | Mock data |
+|-----------|------|----------|-----------|
+| `Personal Ivan` | personal | admin (owner), lector (viewer) | 9 tx, gastos hogar |
+| `Emprendimiento Lima` | business | admin (owner), operador (member) | 21 tx, negocio completo |
+
+En la UI, usa el selector **Espacio** en la barra superior para cambiar entre flujos financieros.
+
 ## MVP Prioritario
 
 El primer entregable debe cubrir finanzas de negocio y usuarios/RBAC. El módulo de inglés queda registrado como evolución futura, sin implementación en esta etapa.

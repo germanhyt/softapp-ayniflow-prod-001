@@ -4,8 +4,8 @@ import pytest
 
 
 @pytest.fixture
-def auth_headers(admin_token: str) -> dict[str, str]:
-    return {"Authorization": f"Bearer {admin_token}"}
+def auth_headers(admin_headers: dict[str, str]) -> dict[str, str]:
+    return admin_headers
 
 
 def _create_loan(client, headers: dict[str, str], *, loan_type: str, outstanding: str = "1000.00"):

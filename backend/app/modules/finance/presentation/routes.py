@@ -3,9 +3,7 @@ from datetime import date
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.modules.auth.domain.models import User
 from app.modules.auth.presentation.deps import require_permission
 from app.modules.finance.application.services import FinanceService
@@ -13,6 +11,7 @@ from app.modules.finance.application.transaction_link_service import Transaction
 from app.modules.finance.application.ws_events import notify_transactions_changed
 from app.modules.finance.domain.models import MovementType
 from app.modules.finance.infrastructure.repositories import FinanceRepository
+from app.modules.finance.presentation.deps import get_finance_repository, get_finance_service
 from app.modules.finance.presentation.schemas import (
     BudgetCreate,
     BudgetHealthBreakdownResponse,
@@ -43,10 +42,6 @@ from app.modules.finance.presentation.schemas import (
 )
 
 router = APIRouter(prefix="/finance", tags=["finance"])
-
-
-def get_finance_service(db: Session = Depends(get_db)) -> FinanceService:
-    return FinanceService(FinanceRepository(db))
 
 
 def serialize_transaction(transaction) -> TransactionResponse:
@@ -81,10 +76,9 @@ def list_transactions(
 def create_transaction(
     payload: TransactionCreate,
     _: User = Depends(require_permission("finance:write")),
+    repository: FinanceRepository = Depends(get_finance_repository),
     service: FinanceService = Depends(get_finance_service),
-    db: Session = Depends(get_db),
 ):
-    repository = FinanceRepository(db)
     link_service = TransactionLinkService(repository)
     movement = MovementType(payload.movement_type.value)
     link_service.validate_links(
@@ -111,10 +105,9 @@ def update_transaction(
     transaction_id: int,
     payload: TransactionUpdate,
     _: User = Depends(require_permission("finance:write")),
+    repository: FinanceRepository = Depends(get_finance_repository),
     service: FinanceService = Depends(get_finance_service),
-    db: Session = Depends(get_db),
 ):
-    repository = FinanceRepository(db)
     link_service = TransactionLinkService(repository)
     transaction = service.ensure_transaction(transaction_id)
     link_service.reverse_links(transaction)
@@ -143,10 +136,9 @@ def update_transaction(
 def delete_transaction(
     transaction_id: int,
     _: User = Depends(require_permission("finance:write")),
+    repository: FinanceRepository = Depends(get_finance_repository),
     service: FinanceService = Depends(get_finance_service),
-    db: Session = Depends(get_db),
 ):
-    repository = FinanceRepository(db)
     link_service = TransactionLinkService(repository)
     transaction = service.ensure_transaction(transaction_id)
     link_service.reverse_links(transaction)
@@ -158,9 +150,8 @@ def delete_transaction(
 def bulk_update_transaction_category(
     payload: TransactionBulkCategoryUpdate,
     _: User = Depends(require_permission("finance:write")),
-    db: Session = Depends(get_db),
+    repository: FinanceRepository = Depends(get_finance_repository),
 ):
-    repository = FinanceRepository(db)
     updated = repository.bulk_update_transaction_category(payload.ids, payload.category)
     if updated:
         notify_transactions_changed("bulk")
@@ -171,10 +162,9 @@ def bulk_update_transaction_category(
 def bulk_delete_transactions(
     payload: TransactionBulkDelete,
     _: User = Depends(require_permission("finance:write")),
+    repository: FinanceRepository = Depends(get_finance_repository),
     service: FinanceService = Depends(get_finance_service),
-    db: Session = Depends(get_db),
 ):
-    repository = FinanceRepository(db)
     link_service = TransactionLinkService(repository)
     transactions = repository.get_transactions_by_ids(payload.ids)
     deleted = 0
@@ -233,7 +223,7 @@ def list_budgets(
     page_size: int = Query(default=20, ge=1, le=200),
     _: User = Depends(require_permission("finance:read")),
     service: FinanceService = Depends(get_finance_service),
-    db: Session = Depends(get_db),
+    repository: FinanceRepository = Depends(get_finance_repository),
 ):
     result = service.list_budgets_paginated(
         month_year=month_year,
@@ -247,7 +237,6 @@ def list_budgets(
         NotificationService,
     )
 
-    repository = FinanceRepository(db)
     notification_service = NotificationService(repository)
     if month_year:
         breakdown = service.get_budget_health_breakdown(month_year)
@@ -275,10 +264,9 @@ def list_budgets(
 def create_budget(
     payload: BudgetCreate,
     _: User = Depends(require_permission("finance:write")),
+    repository: FinanceRepository = Depends(get_finance_repository),
     service: FinanceService = Depends(get_finance_service),
-    db: Session = Depends(get_db),
 ):
-    repository = FinanceRepository(db)
     budget = repository.create_budget(payload.model_dump())
     return service.serialize_budget(budget)
 
@@ -288,10 +276,9 @@ def update_budget(
     budget_id: int,
     payload: BudgetUpdate,
     _: User = Depends(require_permission("finance:write")),
+    repository: FinanceRepository = Depends(get_finance_repository),
     service: FinanceService = Depends(get_finance_service),
-    db: Session = Depends(get_db),
 ):
-    repository = FinanceRepository(db)
     budget = service.ensure_budget(budget_id)
     updated = repository.update_budget(
         budget, payload.model_dump(exclude_unset=True)
@@ -303,10 +290,9 @@ def update_budget(
 def delete_budget(
     budget_id: int,
     _: User = Depends(require_permission("finance:write")),
+    repository: FinanceRepository = Depends(get_finance_repository),
     service: FinanceService = Depends(get_finance_service),
-    db: Session = Depends(get_db),
 ):
-    repository = FinanceRepository(db)
     budget = service.ensure_budget(budget_id)
     repository.delete_budget(budget)
 
@@ -340,10 +326,9 @@ def get_savings_summary(
 def create_savings_goal(
     payload: SavingsGoalCreate,
     _: User = Depends(require_permission("finance:write")),
+    repository: FinanceRepository = Depends(get_finance_repository),
     service: FinanceService = Depends(get_finance_service),
-    db: Session = Depends(get_db),
 ):
-    repository = FinanceRepository(db)
     goal = repository.create_savings_goal(payload.model_dump())
     return service.serialize_savings_goal(goal)
 
@@ -353,10 +338,9 @@ def update_savings_goal(
     goal_id: int,
     payload: SavingsGoalUpdate,
     _: User = Depends(require_permission("finance:write")),
+    repository: FinanceRepository = Depends(get_finance_repository),
     service: FinanceService = Depends(get_finance_service),
-    db: Session = Depends(get_db),
 ):
-    repository = FinanceRepository(db)
     goal = service.ensure_savings_goal(goal_id)
     updated = repository.update_savings_goal(goal, payload.model_dump(exclude_unset=True))
     return service.serialize_savings_goal(updated)
@@ -366,10 +350,9 @@ def update_savings_goal(
 def delete_savings_goal(
     goal_id: int,
     _: User = Depends(require_permission("finance:write")),
+    repository: FinanceRepository = Depends(get_finance_repository),
     service: FinanceService = Depends(get_finance_service),
-    db: Session = Depends(get_db),
 ):
-    repository = FinanceRepository(db)
     goal = service.ensure_savings_goal(goal_id)
     repository.delete_savings_goal(goal)
 
@@ -405,10 +388,9 @@ def get_loan_summary(
 def create_loan_record(
     payload: LoanRecordCreate,
     _: User = Depends(require_permission("finance:write")),
+    repository: FinanceRepository = Depends(get_finance_repository),
     service: FinanceService = Depends(get_finance_service),
-    db: Session = Depends(get_db),
 ):
-    repository = FinanceRepository(db)
     data = payload.model_dump()
     if "loan_type" in data and data["loan_type"] is not None:
         data["loan_type"] = data["loan_type"].value if hasattr(data["loan_type"], "value") else data["loan_type"]
@@ -421,10 +403,9 @@ def update_loan_record(
     loan_id: int,
     payload: LoanRecordUpdate,
     _: User = Depends(require_permission("finance:write")),
+    repository: FinanceRepository = Depends(get_finance_repository),
     service: FinanceService = Depends(get_finance_service),
-    db: Session = Depends(get_db),
 ):
-    repository = FinanceRepository(db)
     loan = service.ensure_loan_record(loan_id)
     data = payload.model_dump(exclude_unset=True)
     if "loan_type" in data and data["loan_type"] is not None:
@@ -445,9 +426,8 @@ def update_loan_record(
 def delete_loan_record(
     loan_id: int,
     _: User = Depends(require_permission("finance:write")),
+    repository: FinanceRepository = Depends(get_finance_repository),
     service: FinanceService = Depends(get_finance_service),
-    db: Session = Depends(get_db),
 ):
-    repository = FinanceRepository(db)
     loan = service.ensure_loan_record(loan_id)
     repository.delete_loan_record(loan)

@@ -71,7 +71,9 @@ class NotificationService:
             else:
                 continue
 
-            reference = f"budget:{month_year}:{category}:{alert_kind}"
+            ws = self.repository.workspace_id
+            ws_prefix = f"{ws}:" if ws is not None else ""
+            reference = f"budget:{ws_prefix}{month_year}:{category}:{alert_kind}"
             if self.repository.get_notification_by_reference(reference):
                 continue
 

@@ -264,6 +264,12 @@ class TypeSummaryItem(BaseModel):
     count: int
 
 
+class CategorySummaryItem(BaseModel):
+    category: str
+    amount: Decimal
+    count: int
+
+
 class FinanceSummaryResponse(BaseModel):
     total_income: Decimal
     total_expense: Decimal
@@ -271,6 +277,7 @@ class FinanceSummaryResponse(BaseModel):
     transaction_count: int
     daily_balances: list[DailyBalanceItem]
     by_payment_type: list[TypeSummaryItem]
+    by_category: list[CategorySummaryItem]
 
 
 class CashClosingResponse(BaseModel):

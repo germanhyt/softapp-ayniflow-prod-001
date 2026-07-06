@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 
 class LoginRequest(BaseModel):
@@ -49,4 +49,28 @@ class CreateUserRequest(BaseModel):
     username: str = Field(min_length=3, max_length=100)
     password: str = Field(min_length=8, max_length=128)
     full_name: str | None = Field(default=None, max_length=255)
-    role_slugs: list[str] = Field(min_length=1)
+    role_slug: str = Field(min_length=2, max_length=50)
+
+
+class UpdateUserRequest(BaseModel):
+    full_name: str | None = Field(default=None, max_length=255)
+    role_slug: str | None = Field(default=None, min_length=2, max_length=50)
+    is_active: bool | None = None
+
+
+class UpdateUserPasswordRequest(BaseModel):
+    password: str | None = Field(default=None, min_length=8, max_length=128)
+    auto_generate: bool = False
+
+    @model_validator(mode="after")
+    def validate_password_source(self):
+        if self.auto_generate and self.password:
+            raise ValueError("No envíes contraseña si activas autogeneración")
+        if not self.auto_generate and not self.password:
+            raise ValueError("Indica una contraseña o activa autogeneración")
+        return self
+
+
+class UpdateUserPasswordResponse(BaseModel):
+    message: str
+    password: str

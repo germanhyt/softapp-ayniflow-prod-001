@@ -154,7 +154,7 @@ function useSettingsMap(settings: IntegrationSettingItem[] | undefined) {
 
 export function IntegrationsPage() {
   const { data: user } = useCurrentUser()
-  const canWrite = hasPermission(user, 'finance:write')
+  const canManage = hasPermission(user, 'finance:read')
   const { data: status, refetch: refetchStatus } = useIntegrationsStatus()
   const { data: gmailConnection, refetch: refetchGmail } = useGmailConnection()
   const { data: gmailPollStatus } = useGmailPollStatus()
@@ -299,7 +299,7 @@ export function IntegrationsPage() {
     }
   }
 
-  if (!canWrite) {
+  if (!canManage) {
     return <p className="text-sm text-muted">No tienes permisos para gestionar integraciones.</p>
   }
 

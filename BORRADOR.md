@@ -115,3 +115,13 @@ El primer alcance implementable será el MVP de finanzas y autenticación/RBAC. 
 ---------------------------------------------------------------
 ---------------------------------------------------------------
 
+- Una funcionalidad extra es poder programar los gastos que se hacen con frecuencia por ejemplo servicios, alquiler, y demás (y que se puedan ejecutar para cierto periodo), y que ya no dependa solo de que ingrese de forma automática (aunque puede coincidir), que se notifique unoS dìas antes (configurable) para enviar al correo del usuario
+
+
+
+- Mejora UI/UX para el tema de gràfico circular que sea de colores para el tipo de medio de pago pero tambièn que haya uno por categoría
+
+
+- Escalamos el proyecto para que sea un app web multiusuario pero que cada uno pueda opeara su flujo financiero propio, este proyecto estará para uso personal y para emprendimientos (Lima Perú)
+
+

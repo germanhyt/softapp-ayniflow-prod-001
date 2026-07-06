@@ -4,6 +4,9 @@ import type {
   LoginPayload,
   Role,
   TokenResponse,
+  UpdateUserPasswordPayload,
+  UpdateUserPasswordResponse,
+  UpdateUserPayload,
   User,
 } from '../../domain/models/auth.types'
 
@@ -25,6 +28,26 @@ export async function fetchUsers(): Promise<User[]> {
 export async function createUserRequest(payload: CreateUserPayload): Promise<User> {
   const { data } = await httpClient.post<User>('/users', payload)
   return data
+}
+
+export async function updateUserRequest(userId: number, payload: UpdateUserPayload): Promise<User> {
+  const { data } = await httpClient.put<User>(`/users/${userId}`, payload)
+  return data
+}
+
+export async function updateUserPasswordRequest(
+  userId: number,
+  payload: UpdateUserPasswordPayload,
+): Promise<UpdateUserPasswordResponse> {
+  const { data } = await httpClient.patch<UpdateUserPasswordResponse>(
+    `/users/${userId}/password`,
+    payload,
+  )
+  return data
+}
+
+export async function deleteUserRequest(userId: number): Promise<void> {
+  await httpClient.delete(`/users/${userId}`)
 }
 
 export async function fetchRoles(): Promise<Role[]> {

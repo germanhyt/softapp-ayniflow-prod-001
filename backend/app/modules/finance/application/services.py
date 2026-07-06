@@ -22,6 +22,7 @@ from app.modules.finance.presentation.schemas import (
     SavingsSummaryResponse,
     TransactionPaginatedResponse,
     TransactionResponse,
+    CategorySummaryItem,
     TypeSummaryItem,
 )
 from app.shared.exceptions import AppException
@@ -75,16 +76,25 @@ class FinanceService:
         type_map: dict[str, dict[str, Decimal | int]] = defaultdict(
             lambda: {"amount": Decimal("0"), "count": 0}
         )
+        category_map: dict[str, dict[str, Decimal | int]] = defaultdict(
+            lambda: {"amount": Decimal("0"), "count": 0}
+        )
 
         for tx in transactions:
             amount = Decimal(str(tx.amount))
             day_key = tx.transaction_date.isoformat()
             type_key = tx.payment_type
+            category_key = (tx.category or "Otros").strip() or "Otros"
 
             type_map[type_key]["amount"] = (
                 Decimal(str(type_map[type_key]["amount"])) + amount
             )
             type_map[type_key]["count"] = int(type_map[type_key]["count"]) + 1
+
+            category_map[category_key]["amount"] = (
+                Decimal(str(category_map[category_key]["amount"])) + amount
+            )
+            category_map[category_key]["count"] = int(category_map[category_key]["count"]) + 1
 
             if tx.movement_type == MovementType.INGRESO:
                 total_income += amount
@@ -113,6 +123,17 @@ class FinanceService:
             )
         ]
 
+        by_category = [
+            CategorySummaryItem(
+                category=category,
+                amount=Decimal(str(values["amount"])),
+                count=int(values["count"]),
+            )
+            for category, values in sorted(
+                category_map.items(), key=lambda item: item[1]["amount"], reverse=True
+            )
+        ]
+
         return FinanceSummaryResponse(
             total_income=total_income,
             total_expense=total_expense,
@@ -120,6 +141,7 @@ class FinanceService:
             transaction_count=len(transactions),
             daily_balances=daily_balances,
             by_payment_type=by_payment_type,
+            by_category=by_category,
         )
 
     def get_cash_closing(self, from_date: date, to_date: date) -> CashClosingResponse:

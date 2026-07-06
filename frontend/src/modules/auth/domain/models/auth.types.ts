@@ -38,5 +38,21 @@ export interface CreateUserPayload {
   username: string
   password: string
   full_name?: string
-  role_slugs: string[]
+  role_slug: string
+}
+
+export interface UpdateUserPayload {
+  full_name?: string | null
+  role_slug?: string
+  is_active?: boolean
+}
+
+export interface UpdateUserPasswordPayload {
+  password?: string
+  auto_generate?: boolean
+}
+
+export interface UpdateUserPasswordResponse {
+  message: string
+  password: string
 }

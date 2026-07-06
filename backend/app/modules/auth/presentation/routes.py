@@ -16,6 +16,9 @@ from app.modules.auth.presentation.schemas import (
     LoginRequest,
     RoleResponse,
     TokenResponse,
+    UpdateUserPasswordRequest,
+    UpdateUserPasswordResponse,
+    UpdateUserRequest,
     UserResponse,
 )
 
@@ -57,11 +60,60 @@ def create_user(
         username=payload.username,
         password=payload.password,
         full_name=payload.full_name,
-        role_slugs=payload.role_slugs,
+        role_slug=payload.role_slug,
     )
     repository = AuthRepository(db)
     created = repository.get_user_by_id(user.id)
     return serialize_user(created)
+
+
+@users_router.put("/{user_id}", response_model=UserResponse)
+def update_user(
+    user_id: int,
+    payload: UpdateUserRequest,
+    current_user: User = Depends(require_permission("users:write")),
+    service: AuthService = Depends(get_auth_service),
+):
+    if current_user.id == user_id and payload.is_active is False:
+        from app.shared.exceptions import AppException
+
+        raise AppException("No puedes desactivar tu propio usuario", status_code=400)
+
+    updated = service.update_user(
+        user_id=user_id,
+        full_name=payload.full_name,
+        is_active=payload.is_active,
+        role_slug=payload.role_slug,
+    )
+    return serialize_user(updated)
+
+
+@users_router.patch("/{user_id}/password", response_model=UpdateUserPasswordResponse)
+def update_user_password(
+    user_id: int,
+    payload: UpdateUserPasswordRequest,
+    _: User = Depends(require_permission("users:write")),
+    service: AuthService = Depends(get_auth_service),
+):
+    password = service.update_user_password(
+        user_id=user_id,
+        password=payload.password,
+        auto_generate=payload.auto_generate,
+    )
+
+    return UpdateUserPasswordResponse(
+        message="Contraseña actualizada correctamente",
+        password=password,
+    )
+
+
+@users_router.delete("/{user_id}", status_code=204)
+def delete_user(
+    user_id: int,
+    current_user: User = Depends(require_permission("users:write")),
+    service: AuthService = Depends(get_auth_service),
+):
+    service.delete_user(user_id=user_id, current_user_id=current_user.id)
 
 
 roles_router = APIRouter(prefix="/roles", tags=["roles"])

@@ -1,13 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { clearAccessToken, setAccessToken } from '../../../../core/sessions/authStorage'
-import type { CreateUserPayload, LoginPayload, Role, User } from '../../domain/models/auth.types'
+import type {
+  CreateUserPayload,
+  LoginPayload,
+  Role,
+  UpdateUserPasswordPayload,
+  UpdateUserPayload,
+  User,
+} from '../../domain/models/auth.types'
 import {
   createUserRequest,
+  deleteUserRequest,
   fetchCurrentUser,
   fetchRoles,
   fetchUsers,
   loginRequest,
+  updateUserPasswordRequest,
+  updateUserRequest,
 } from '../../infrastructure/repository/authRepository'
 
 export function useCurrentUser(enabled = true) {
@@ -60,6 +70,35 @@ export function useCreateUser() {
 
   return useMutation({
     mutationFn: (payload: CreateUserPayload) => createUserRequest(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+  })
+}
+
+export function useUpdateUser() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ userId, payload }: { userId: number; payload: UpdateUserPayload }) =>
+      updateUserRequest(userId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+    },
+  })
+}
+
+export function useUpdateUserPassword() {
+  return useMutation({
+    mutationFn: ({ userId, payload }: { userId: number; payload: UpdateUserPasswordPayload }) =>
+      updateUserPasswordRequest(userId, payload),
+  })
+}
+
+export function useDeleteUser() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (userId: number) => deleteUserRequest(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
     },

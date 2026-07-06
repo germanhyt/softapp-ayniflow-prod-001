@@ -20,6 +20,7 @@ import { BalanceByDayChart } from './components/BalanceByDayChart'
 import { BudgetHealthModal } from './components/BudgetHealthModal'
 import { HourlyTrendChart } from './components/HourlyTrendChart'
 import { PaymentTypePieChart } from './components/PaymentTypePieChart'
+import { CategoryPieChart } from './components/CategoryPieChart'
 
 export function FinanceOverviewPage() {
   const { data: user } = useCurrentUser()
@@ -48,6 +49,8 @@ export function FinanceOverviewPage() {
     setHealthModalTab(tab)
     setHealthModalOpen(true)
   }
+  const categoryRows = summary?.by_category ?? []
+  const categoryTotal = categoryRows.reduce((sum, row) => sum + Number(row.amount), 0)
 
   return (
     <div className="space-y-6">
@@ -171,6 +174,38 @@ export function FinanceOverviewPage() {
         <div className="chart-panel">
           <h3 className="mb-3 font-medium">Distribución por tipo de pago</h3>
           <PaymentTypePieChart data={summary?.by_payment_type ?? []} />
+        </div>
+        <div className="chart-panel xl:col-span-2">
+          <h3 className="mb-3 font-medium">Distribución por categoría</h3>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <CategoryPieChart data={categoryRows} />
+            <div className="space-y-2">
+              {categoryRows.length ? (
+                categoryRows.slice(0, 8).map((row) => {
+                  const amount = Number(row.amount)
+                  const percent = categoryTotal > 0 ? (amount / categoryTotal) * 100 : 0
+                  return (
+                    <div
+                      key={row.category}
+                      className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
+                      style={{ borderColor: 'var(--premium-border)' }}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{row.category}</p>
+                        <p className="text-xs text-muted">{row.count} operaciones</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">{formatCurrency(amount)}</p>
+                        <p className="text-xs text-muted">{percent.toFixed(1)}%</p>
+                      </div>
+                    </div>
+                  )
+                })
+              ) : (
+                <p className="py-6 text-center text-sm text-muted">Sin categorías para el rango actual.</p>
+              )}
+            </div>
+          </div>
         </div>
         <div className="chart-panel xl:col-span-2">
           <h3 className="mb-3 font-medium">Tendencia por hora (ingresos vs egresos)</h3>

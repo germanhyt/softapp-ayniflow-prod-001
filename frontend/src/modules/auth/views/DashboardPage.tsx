@@ -38,6 +38,8 @@ import {
 } from '../../finance/application/hooks/useFinance'
 import { BalanceByDayChart } from '../../finance/views/components/BalanceByDayChart'
 import { BudgetHealthModal } from '../../finance/views/components/BudgetHealthModal'
+import { PaymentTypePieChart } from '../../finance/views/components/PaymentTypePieChart'
+import { CategoryPieChart } from '../../finance/views/components/CategoryPieChart'
 
 const QUICK_LINKS = [
   {
@@ -268,6 +270,39 @@ export function DashboardPage() {
               )}
             </>
           )}
+
+          <section className="grid gap-4 xl:grid-cols-2">
+            <div className="chart-panel">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-medium">Medios de pago</h3>
+                <Link to="/finance" className="text-sm text-premium-primary hover:underline">
+                  Ver análisis
+                </Link>
+              </div>
+              {summaryLoading ? (
+                <div className="flex h-[240px] items-center justify-center text-sm text-muted">
+                  Cargando…
+                </div>
+              ) : (
+                <PaymentTypePieChart data={summary?.by_payment_type ?? []} height={240} />
+              )}
+            </div>
+            <div className="chart-panel">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-medium">Gasto por categoría</h3>
+                <Link to="/finance" className="text-sm text-premium-primary hover:underline">
+                  Ver análisis
+                </Link>
+              </div>
+              {summaryLoading ? (
+                <div className="flex h-[240px] items-center justify-center text-sm text-muted">
+                  Cargando…
+                </div>
+              ) : (
+                <CategoryPieChart data={summary?.by_category ?? []} height={240} />
+              )}
+            </div>
+          </section>
 
           <section className="grid gap-4 xl:grid-cols-3">
             <div className="chart-panel xl:col-span-2">

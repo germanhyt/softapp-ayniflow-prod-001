@@ -126,6 +126,7 @@ export interface FinanceSummary {
   transaction_count: number
   daily_balances: { date: string; income: string; expense: string }[]
   by_payment_type: { payment_type: string; amount: string; count: number }[]
+  by_category: { category: string; amount: string; count: number }[]
 }
 
 export interface CashClosing {

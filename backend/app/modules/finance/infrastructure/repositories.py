@@ -16,8 +16,19 @@ from app.modules.finance.domain.models import (
 
 
 class FinanceRepository:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, workspace_id: int | None = None):
         self.db = db
+        self.workspace_id = workspace_id
+
+    def _scope(self, query, model):
+        if self.workspace_id is not None and hasattr(model, "workspace_id"):
+            return query.filter(model.workspace_id == self.workspace_id)
+        return query
+
+    def _with_workspace(self, data: dict) -> dict:
+        if self.workspace_id is not None:
+            return {**data, "workspace_id": self.workspace_id}
+        return data
 
     def list_transactions(
         self,
@@ -71,7 +82,7 @@ class FinanceRepository:
         movement_type: MovementType | None = None,
         search: str | None = None,
     ):
-        query = self.db.query(Transaction)
+        query = self._scope(self.db.query(Transaction), Transaction)
 
         if from_date:
             query = query.filter(Transaction.transaction_date >= from_date)
@@ -91,17 +102,19 @@ class FinanceRepository:
         return query
 
     def get_transaction(self, transaction_id: int) -> Transaction | None:
-        return self.db.query(Transaction).filter(Transaction.id == transaction_id).first()
+        return self._scope(
+            self.db.query(Transaction).filter(Transaction.id == transaction_id),
+            Transaction,
+        ).first()
 
     def get_by_operation_number(self, operation_number: str) -> Transaction | None:
-        return (
-            self.db.query(Transaction)
-            .filter(Transaction.operation_number == operation_number)
-            .first()
-        )
+        return self._scope(
+            self.db.query(Transaction).filter(Transaction.operation_number == operation_number),
+            Transaction,
+        ).first()
 
     def create_transaction(self, data: dict) -> Transaction:
-        transaction = Transaction(**data)
+        transaction = Transaction(**self._with_workspace(data))
         self.db.add(transaction)
         self.db.commit()
         self.db.refresh(transaction)
@@ -121,7 +134,7 @@ class FinanceRepository:
     def list_budgets(
         self, month_year: str | None = None, category: str | None = None
     ) -> list[Budget]:
-        query = self.db.query(Budget)
+        query = self._scope(self.db.query(Budget), Budget)
         if month_year:
             query = query.filter(Budget.month_year == month_year)
         if category:
@@ -129,10 +142,13 @@ class FinanceRepository:
         return query.order_by(Budget.month_year.desc(), Budget.category.asc()).all()
 
     def get_budget(self, budget_id: int) -> Budget | None:
-        return self.db.query(Budget).filter(Budget.id == budget_id).first()
+        return self._scope(
+            self.db.query(Budget).filter(Budget.id == budget_id),
+            Budget,
+        ).first()
 
     def create_budget(self, data: dict) -> Budget:
-        budget = Budget(**data)
+        budget = Budget(**self._with_workspace(data))
         self.db.add(budget)
         self.db.commit()
         self.db.refresh(budget)
@@ -150,7 +166,11 @@ class FinanceRepository:
         self.db.commit()
 
     def list_savings_goals(self) -> list[SavingsGoal]:
-        return self.db.query(SavingsGoal).order_by(SavingsGoal.created_at.desc(), SavingsGoal.id.desc()).all()
+        return (
+            self._scope(self.db.query(SavingsGoal), SavingsGoal)
+            .order_by(SavingsGoal.created_at.desc(), SavingsGoal.id.desc())
+            .all()
+        )
 
     def list_savings_goals_paginated(
         self,
@@ -160,7 +180,7 @@ class FinanceRepository:
         offset: int = 0,
         limit: int = 20,
     ) -> tuple[list[SavingsGoal], int]:
-        query = self.db.query(SavingsGoal)
+        query = self._scope(self.db.query(SavingsGoal), SavingsGoal)
         if search:
             query = query.filter(SavingsGoal.name.ilike(f"%{search.strip()}%"))
         if progress == "in_progress":
@@ -177,10 +197,13 @@ class FinanceRepository:
         return items, total
 
     def get_savings_goal(self, goal_id: int) -> SavingsGoal | None:
-        return self.db.query(SavingsGoal).filter(SavingsGoal.id == goal_id).first()
+        return self._scope(
+            self.db.query(SavingsGoal).filter(SavingsGoal.id == goal_id),
+            SavingsGoal,
+        ).first()
 
     def create_savings_goal(self, data: dict) -> SavingsGoal:
-        goal = SavingsGoal(**data)
+        goal = SavingsGoal(**self._with_workspace(data))
         self.db.add(goal)
         self.db.commit()
         self.db.refresh(goal)
@@ -208,7 +231,11 @@ class FinanceRepository:
         return goal
 
     def list_loan_records(self) -> list[LoanRecord]:
-        return self.db.query(LoanRecord).order_by(LoanRecord.created_at.desc(), LoanRecord.id.desc()).all()
+        return (
+            self._scope(self.db.query(LoanRecord), LoanRecord)
+            .order_by(LoanRecord.created_at.desc(), LoanRecord.id.desc())
+            .all()
+        )
 
     def list_loan_records_paginated(
         self,
@@ -219,7 +246,7 @@ class FinanceRepository:
         offset: int = 0,
         limit: int = 20,
     ) -> tuple[list[LoanRecord], int]:
-        query = self.db.query(LoanRecord)
+        query = self._scope(self.db.query(LoanRecord), LoanRecord)
         if search:
             query = query.filter(LoanRecord.lender.ilike(f"%{search.strip()}%"))
         if status:
@@ -236,10 +263,13 @@ class FinanceRepository:
         return items, total
 
     def get_loan_record(self, loan_id: int) -> LoanRecord | None:
-        return self.db.query(LoanRecord).filter(LoanRecord.id == loan_id).first()
+        return self._scope(
+            self.db.query(LoanRecord).filter(LoanRecord.id == loan_id),
+            LoanRecord,
+        ).first()
 
     def create_loan_record(self, data: dict) -> LoanRecord:
-        loan = LoanRecord(**data)
+        loan = LoanRecord(**self._with_workspace(data))
         self.db.add(loan)
         self.db.commit()
         self.db.refresh(loan)
@@ -273,12 +303,17 @@ class FinanceRepository:
     def get_transactions_by_ids(self, ids: list[int]) -> list[Transaction]:
         if not ids:
             return []
-        return self.db.query(Transaction).filter(Transaction.id.in_(ids)).all()
+        return self._scope(
+            self.db.query(Transaction).filter(Transaction.id.in_(ids)),
+            Transaction,
+        ).all()
 
     def bulk_update_transaction_category(self, ids: list[int], category: str) -> int:
         updated = (
-            self.db.query(Transaction)
-            .filter(Transaction.id.in_(ids))
+            self._scope(
+                self.db.query(Transaction).filter(Transaction.id.in_(ids)),
+                Transaction,
+            )
             .update({Transaction.category: category}, synchronize_session=False)
         )
         self.db.commit()
@@ -290,17 +325,16 @@ class FinanceRepository:
         end = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
         normalized_category = category.strip().lower()
 
-        total = (
-            self.db.query(func.coalesce(func.sum(Transaction.amount), 0))
-            .filter(
-                Transaction.movement_type == MovementType.EGRESO,
-                func.lower(func.trim(func.coalesce(Transaction.category, "")))
-                == normalized_category,
-                Transaction.transaction_date >= start,
-                Transaction.transaction_date < end,
-            )
-            .scalar()
+        query = self.db.query(func.coalesce(func.sum(Transaction.amount), 0)).filter(
+            Transaction.movement_type == MovementType.EGRESO,
+            func.lower(func.trim(func.coalesce(Transaction.category, "")))
+            == normalized_category,
+            Transaction.transaction_date >= start,
+            Transaction.transaction_date < end,
         )
+        if self.workspace_id is not None:
+            query = query.filter(Transaction.workspace_id == self.workspace_id)
+        total = query.scalar()
         return Decimal(str(total or 0))
 
     def aggregate_summary(
@@ -329,7 +363,7 @@ class FinanceRepository:
     def list_notifications(self, *, limit: int = 20, unread_only: bool = False) -> list:
         from app.modules.finance.domain.models import FinanceNotification
 
-        query = self.db.query(FinanceNotification)
+        query = self._scope(self.db.query(FinanceNotification), FinanceNotification)
         if unread_only:
             query = query.filter(FinanceNotification.is_read.is_(False))
         return query.order_by(FinanceNotification.id.desc()).limit(limit).all()
@@ -337,27 +371,32 @@ class FinanceRepository:
     def count_unread_notifications(self) -> int:
         from app.modules.finance.domain.models import FinanceNotification
 
-        return (
-            self.db.query(FinanceNotification)
-            .filter(FinanceNotification.is_read.is_(False))
-            .count()
-        )
+        return self._scope(
+            self.db.query(FinanceNotification).filter(FinanceNotification.is_read.is_(False)),
+            FinanceNotification,
+        ).count()
 
     def get_notification(self, notification_id: int):
         from app.modules.finance.domain.models import FinanceNotification
 
-        return self.db.query(FinanceNotification).filter(FinanceNotification.id == notification_id).first()
+        return self._scope(
+            self.db.query(FinanceNotification).filter(FinanceNotification.id == notification_id),
+            FinanceNotification,
+        ).first()
 
     def get_notification_by_reference(self, reference_key: str):
         from app.modules.finance.domain.models import FinanceNotification
 
-        return (
-            self.db.query(FinanceNotification)
-            .filter(FinanceNotification.reference_key == reference_key)
-            .first()
-        )
+        return self._scope(
+            self.db.query(FinanceNotification).filter(
+                FinanceNotification.reference_key == reference_key
+            ),
+            FinanceNotification,
+        ).first()
 
     def create_notification(self, notification) -> object:
+        if self.workspace_id is not None and hasattr(notification, "workspace_id"):
+            notification.workspace_id = self.workspace_id
         self.db.add(notification)
         self.db.commit()
         self.db.refresh(notification)
@@ -373,8 +412,10 @@ class FinanceRepository:
         from app.modules.finance.domain.models import FinanceNotification
 
         updated = (
-            self.db.query(FinanceNotification)
-            .filter(FinanceNotification.is_read.is_(False))
+            self._scope(
+                self.db.query(FinanceNotification).filter(FinanceNotification.is_read.is_(False)),
+                FinanceNotification,
+            )
             .update({FinanceNotification.is_read: True})
         )
         self.db.commit()
@@ -398,7 +439,10 @@ class FinanceRepository:
     def get_gmail_credential(self):
         from app.modules.finance.domain.models import FinanceGmailCredential
 
-        return self.db.query(FinanceGmailCredential).order_by(FinanceGmailCredential.id.desc()).first()
+        query = self.db.query(FinanceGmailCredential)
+        if self.workspace_id is not None:
+            query = query.filter(FinanceGmailCredential.workspace_id == self.workspace_id)
+        return query.order_by(FinanceGmailCredential.id.desc()).first()
 
     def get_gmail_refresh_token(self) -> str | None:
         if settings.gmail_refresh_token:
@@ -414,15 +458,19 @@ class FinanceRepository:
             credential.refresh_token = refresh_token
             credential.connected_email = connected_email
         else:
-            self.db.add(
-                FinanceGmailCredential(refresh_token=refresh_token, connected_email=connected_email)
-            )
+            payload = {"refresh_token": refresh_token, "connected_email": connected_email}
+            if self.workspace_id is not None:
+                payload["workspace_id"] = self.workspace_id
+            self.db.add(FinanceGmailCredential(**payload))
         self.db.commit()
 
     def delete_gmail_credential(self) -> None:
         from app.modules.finance.domain.models import FinanceGmailCredential
 
-        self.db.query(FinanceGmailCredential).delete()
+        query = self.db.query(FinanceGmailCredential)
+        if self.workspace_id is not None:
+            query = query.filter(FinanceGmailCredential.workspace_id == self.workspace_id)
+        query.delete()
         self.db.commit()
 
     def list_integration_settings(self) -> list:
