@@ -1,5 +1,7 @@
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 
+import { ensureArray } from '../../../../core/utils/collections'
+
 export interface DistributionSlice {
   name: string
   value: number
@@ -21,17 +23,18 @@ export function DistributionPieChart({
   height = 300,
   showPercentLabels = true,
 }: DistributionPieChartProps) {
-  if (!data.length) {
+  const rows = ensureArray<DistributionSlice>(data)
+  if (!rows.length) {
     return <p className="py-8 text-center text-sm text-muted">{emptyMessage}</p>
   }
 
-  const total = data.reduce((sum, item) => sum + item.value, 0)
+  const total = rows.reduce((sum, item) => sum + item.value, 0)
 
   return (
     <ResponsiveContainer width="100%" height={height}>
       <PieChart>
         <Pie
-          data={data}
+          data={rows}
           dataKey="value"
           nameKey="name"
           cx="50%"
@@ -46,7 +49,7 @@ export function DistributionPieChart({
           }
           labelLine={false}
         >
-          {data.map((item, index) => (
+          {rows.map((item, index) => (
             <Cell key={item.name} fill={resolveColor(item.name, index)} />
           ))}
         </Pie>

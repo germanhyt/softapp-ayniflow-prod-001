@@ -1,4 +1,5 @@
 import { colorForCategory } from '../../application/utils/chartColors'
+import { ensureArray } from '../../../../core/utils/collections'
 import { DistributionPieChart } from './DistributionPieChart'
 
 interface CategoryPieChartProps {
@@ -7,7 +8,7 @@ interface CategoryPieChartProps {
 }
 
 export function CategoryPieChart({ data, height }: CategoryPieChartProps) {
-  const chartData = data.map((item) => ({
+  const chartData = ensureArray<{ category: string; amount: string; count: number }>(data).map((item) => ({
     name: item.category,
     value: Number(item.amount),
     count: item.count,

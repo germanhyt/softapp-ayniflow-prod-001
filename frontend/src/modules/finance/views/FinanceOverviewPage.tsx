@@ -2,6 +2,7 @@ import { ArrowLeftRight, FileSpreadsheet, FileText, Wallet } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { ensureArray } from '../../../core/utils/collections'
 import { hasPermission, useCurrentUser } from '../../auth/application/hooks/useAuth'
 import {
   formatCurrency,
@@ -15,7 +16,7 @@ import {
   useFinanceSummary,
   useTransactions,
 } from '../application/hooks/useFinance'
-import type { FinanceFilters, MovementType } from '../domain/models/finance.types'
+import type { FinanceFilters, MovementType, Transaction } from '../domain/models/finance.types'
 import { BalanceByDayChart } from './components/BalanceByDayChart'
 import { BudgetHealthModal } from './components/BudgetHealthModal'
 import { HourlyTrendChart } from './components/HourlyTrendChart'
@@ -36,7 +37,7 @@ export function FinanceOverviewPage() {
 
   const { data: summary, isLoading: summaryLoading } = useFinanceSummary(filters)
   const { data: transactionsData } = useTransactions({ ...filters, page: 1, page_size: 200 })
-  const transactions = transactionsData?.items ?? []
+  const transactions = ensureArray<Transaction>(transactionsData?.items)
   const { data: budgetHealth } = useBudgetHealthBreakdown(monthYear)
   const { exportExcel, exportPdf } = useExportReports()
 
@@ -49,7 +50,7 @@ export function FinanceOverviewPage() {
     setHealthModalTab(tab)
     setHealthModalOpen(true)
   }
-  const categoryRows = summary?.by_category ?? []
+  const categoryRows = ensureArray<{ category: string; amount: string; count: number }>(summary?.by_category)
   const categoryTotal = categoryRows.reduce((sum, row) => sum + Number(row.amount), 0)
 
   return (

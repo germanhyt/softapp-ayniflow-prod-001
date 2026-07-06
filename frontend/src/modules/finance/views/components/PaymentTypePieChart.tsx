@@ -1,4 +1,5 @@
 import { colorForPaymentType } from '../../application/utils/chartColors'
+import { ensureArray } from '../../../../core/utils/collections'
 import { DistributionPieChart } from './DistributionPieChart'
 
 interface PaymentTypePieChartProps {
@@ -7,7 +8,7 @@ interface PaymentTypePieChartProps {
 }
 
 export function PaymentTypePieChart({ data, height }: PaymentTypePieChartProps) {
-  const chartData = data.map((item) => ({
+  const chartData = ensureArray<{ payment_type: string; amount: string; count: number }>(data).map((item) => ({
     name: item.payment_type,
     value: Number(item.amount),
     count: item.count,

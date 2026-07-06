@@ -21,6 +21,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { hasPermission, useCurrentUser } from '../application/hooks/useAuth'
+import type { Role } from '../domain/models/auth.types'
+import { ensureArray } from '../../../core/utils/collections'
 import {
   formatCurrency,
   firstDayOfMonthIsoDate,
@@ -151,7 +153,10 @@ export function DashboardPage() {
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <ProfileChip label="Usuario" value={user?.username ?? '—'} />
-          <ProfileChip label="Roles" value={user?.roles.map((r) => r.name).join(', ') || '—'} />
+          <ProfileChip
+            label="Roles"
+            value={ensureArray<Role>(user?.roles).map((r) => r.name).join(', ') || '—'}
+          />
           <ProfileChip label="Permisos" value={String(user?.permissions.length ?? 0)} />
           <ProfileChip
             label="Módulos"
@@ -573,7 +578,7 @@ export function DashboardPage() {
         </button>
         {showPermissions && (
           <div className="mt-3 flex flex-wrap gap-2 border-t pt-3" style={{ borderColor: 'var(--premium-border)' }}>
-            {user?.permissions.map((permission) => (
+            {ensureArray<string>(user?.permissions).map((permission) => (
               <span key={permission} className="badge">
                 {permission}
               </span>

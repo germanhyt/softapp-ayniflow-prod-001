@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { PasswordInput } from '../../../../core/components/PasswordInput'
+import { ensureArray } from '../../../../core/utils/collections'
 import { Modal } from '../../../../core/components/Modal'
 import { alertSuccess } from '../../../../core/utils/alerts'
 import { getApiErrorMessage, validateUserEmail, validateUserPassword } from '../../../../core/utils/apiError'
@@ -11,7 +12,7 @@ import { UserFormField } from './UserFormField'
 interface UserCreateModalProps {
   isOpen: boolean
   onClose: () => void
-  roles: Role[]
+  roles?: Role[]
 }
 
 function buildEmptyForm(roles: Role[]) {
@@ -158,11 +159,12 @@ function UserCreateForm({ roles, onClose }: { roles: Role[]; onClose: () => void
 }
 
 export function UserCreateModal({ isOpen, onClose, roles }: UserCreateModalProps) {
-  const formKey = `${roles.map((role) => role.id).join('-') || 'default'}-${isOpen ? 'open' : 'closed'}`
+  const safeRoles = ensureArray<Role>(roles)
+  const formKey = `${safeRoles.map((role) => role.id).join('-') || 'default'}-${isOpen ? 'open' : 'closed'}`
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Nuevo usuario" size="lg">
-      {isOpen ? <UserCreateForm key={formKey} roles={roles} onClose={onClose} /> : null}
+      {isOpen ? <UserCreateForm key={formKey} roles={safeRoles} onClose={onClose} /> : null}
     </Modal>
   )
 }

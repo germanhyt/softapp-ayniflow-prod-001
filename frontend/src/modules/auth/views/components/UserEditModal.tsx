@@ -1,3 +1,4 @@
+import { ensureArray } from '../../../../core/utils/collections'
 import { KeyRound, UserRound } from 'lucide-react'
 import { useState } from 'react'
 
@@ -19,16 +20,17 @@ interface UserEditModalProps {
 }
 
 function buildFormState(user: User, roles: Role[]) {
+  const userRoles = ensureArray<Role>(user.roles)
   return {
     fullName: user.full_name ?? '',
-    roleSlug: user.roles[0]?.slug ?? roles[0]?.slug ?? 'reader',
+    roleSlug: userRoles[0]?.slug ?? roles[0]?.slug ?? 'reader',
     isActive: user.is_active,
   }
 }
 
 function UserEditForm({
   user,
-  roles,
+  roles: rolesInput,
   isCurrentUser,
   onClose,
 }: {
@@ -37,6 +39,7 @@ function UserEditForm({
   isCurrentUser: boolean
   onClose: () => void
 }) {
+  const roles = ensureArray<Role>(rolesInput)
   const updateUser = useUpdateUser()
   const updatePassword = useUpdateUserPassword()
   const initialState = buildFormState(user, roles)
@@ -136,7 +139,7 @@ function UserEditForm({
           </div>
           <p className="mt-0.5 truncate text-sm text-muted">{user.email}</p>
           <p className="mt-1 text-xs text-muted">
-            Rol actual: <strong>{user.roles[0]?.name ?? 'Sin rol'}</strong>
+            Rol actual: <strong>{ensureArray<Role>(user.roles)[0]?.name ?? 'Sin rol'}</strong>
           </p>
         </div>
       </section>

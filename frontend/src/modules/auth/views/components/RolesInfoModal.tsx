@@ -1,25 +1,28 @@
 import { Modal } from '../../../../core/components/Modal'
-import type { Role } from '../../domain/models/auth.types'
+import { ensureArray } from '../../../../core/utils/collections'
+import type { Permission, Role } from '../../domain/models/auth.types'
 
 interface RolesInfoModalProps {
   isOpen: boolean
   onClose: () => void
-  roles: Role[]
+  roles?: Role[]
 }
 
 export function RolesInfoModal({ isOpen, onClose, roles }: RolesInfoModalProps) {
+  const safeRoles = ensureArray<Role>(roles)
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Roles y permisos" size="lg">
       <div className="space-y-4">
-        {roles.length ? (
-          roles.map((role) => (
+        {safeRoles.length ? (
+          safeRoles.map((role) => (
             <div key={role.id} className="card space-y-2">
               <div>
                 <p className="font-medium">{role.name}</p>
                 {role.description && <p className="text-sm text-muted">{role.description}</p>}
               </div>
               <div className="flex flex-wrap gap-2">
-                {role.permissions.map((permission) => (
+                {ensureArray<Permission>(role.permissions).map((permission) => (
                   <span key={permission.id} className="badge">
                     {permission.code}
                   </span>

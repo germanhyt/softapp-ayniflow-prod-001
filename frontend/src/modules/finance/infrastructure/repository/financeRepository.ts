@@ -1,4 +1,5 @@
 import { httpClient } from '../../../../core/interceptors/httpClient'
+import { ensureArray } from '../../../../core/utils/collections'
 import type {
   Budget,
   BudgetHealthBreakdown,
@@ -104,7 +105,12 @@ export async function bulkDeleteTransactions(ids: number[]): Promise<Transaction
 export async function fetchFinanceSummary(filters?: FinanceFilters): Promise<FinanceSummary> {
   const params = buildParams(filters)
   const { data } = await httpClient.get<FinanceSummary>(`/finance/summary?${params.toString()}`)
-  return data
+  return {
+    ...data,
+    daily_balances: ensureArray(data?.daily_balances),
+    by_payment_type: ensureArray(data?.by_payment_type),
+    by_category: ensureArray(data?.by_category),
+  }
 }
 
 export async function fetchCashClosing(from: string, to: string): Promise<CashClosing> {
@@ -318,7 +324,7 @@ export async function disconnectGmail(): Promise<void> {
 
 export async function fetchIntegrationSettingsList(): Promise<IntegrationSettingItem[]> {
   const { data } = await httpClient.get<IntegrationSettingItem[]>('/finance/integrations/settings/list')
-  return data
+  return ensureArray(data)
 }
 
 export async function updateIntegrationSetting(

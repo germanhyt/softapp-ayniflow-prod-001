@@ -9,16 +9,19 @@ import {
   YAxis,
 } from 'recharts'
 
+import { ensureArray } from '../../../../core/utils/collections'
+
 interface BalanceByDayChartProps {
   data: { date: string; income: string; expense: string }[]
 }
 
 export function BalanceByDayChart({ data }: BalanceByDayChartProps) {
-  if (!data.length) {
+  const rows = ensureArray<{ date: string; income: string; expense: string }>(data)
+  if (!rows.length) {
     return <p className="py-8 text-center text-sm text-muted">Sin datos para el periodo.</p>
   }
 
-  const chartData = data.slice(-30).map((item) => ({
+  const chartData = rows.slice(-30).map((item) => ({
     date: item.date.slice(5),
     ingresos: Number(item.income),
     egresos: Number(item.expense),

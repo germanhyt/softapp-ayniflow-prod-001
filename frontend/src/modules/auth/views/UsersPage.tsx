@@ -1,6 +1,7 @@
 import { Plus, Shield } from 'lucide-react'
 import { useState } from 'react'
 
+import { ensureArray } from '../../../core/utils/collections'
 import { alertError, alertSuccess, confirmAction } from '../../../core/utils/alerts'
 import { getApiErrorMessage } from '../../../core/utils/apiError'
 import {
@@ -10,18 +11,20 @@ import {
   useRoles,
   useUsers,
 } from '../application/hooks/useAuth'
-import type { User } from '../domain/models/auth.types'
+import type { Role, User } from '../domain/models/auth.types'
 import { RolesInfoModal } from './components/RolesInfoModal'
 import { UserCreateModal } from './components/UserCreateModal'
 import { UserEditModal } from './components/UserEditModal'
 
 export function UsersPage() {
   const { data: currentUser } = useCurrentUser()
-  const { data: users, isLoading } = useUsers()
+  const { data: usersData, isLoading } = useUsers()
   const deleteUser = useDeleteUser()
   const canManage = hasPermission(currentUser, 'users:write')
   const canViewRoles = hasPermission(currentUser, 'roles:read')
-  const { data: roles = [] } = useRoles(canViewRoles || canManage)
+  const { data: rolesData } = useRoles(canViewRoles || canManage)
+  const roles = ensureArray<Role>(rolesData)
+  const users = ensureArray<User>(usersData)
 
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -111,7 +114,7 @@ export function UsersPage() {
               {users?.length ? (
                 users.map((user) => {
                   const isSelf = user.id === currentUser?.id
-                  const role = user.roles[0]
+                  const role = ensureArray<Role>(user.roles)[0]
 
                   return (
                     <tr

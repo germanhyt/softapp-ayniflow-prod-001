@@ -1,4 +1,5 @@
 import { httpClient } from '../../../../core/interceptors/httpClient'
+import { ensureArray } from '../../../../core/utils/collections'
 import type {
   CreateUserPayload,
   LoginPayload,
@@ -22,7 +23,7 @@ export async function fetchCurrentUser(): Promise<User> {
 
 export async function fetchUsers(): Promise<User[]> {
   const { data } = await httpClient.get<User[]>('/users')
-  return data
+  return ensureArray<User>(data)
 }
 
 export async function createUserRequest(payload: CreateUserPayload): Promise<User> {
@@ -52,5 +53,5 @@ export async function deleteUserRequest(userId: number): Promise<void> {
 
 export async function fetchRoles(): Promise<Role[]> {
   const { data } = await httpClient.get<Role[]>('/roles')
-  return data
+  return ensureArray<Role>(data)
 }
