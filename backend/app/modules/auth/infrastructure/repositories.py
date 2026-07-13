@@ -137,17 +137,80 @@ class AuthRepository:
         return permission
 
     def upsert_role(self, slug: str, name: str, description: str, permission_codes: list[str]) -> Role:
-        role = self.db.query(Role).filter(Role.slug == slug).first()
-        permissions = self.db.query(Permission).filter(Permission.code.in_(permission_codes)).all()
+        role, _created = self.ensure_role(slug, name, description, permission_codes)
+        if not _created:
+            self.sync_role_permissions(role, permission_codes)
+        return role
 
+    def ensure_role(
+        self,
+        slug: str,
+        name: str,
+        description: str,
+        permission_codes: list[str],
+    ) -> tuple[Role, bool]:
+        """Crea el rol con permisos por defecto, o actualiza solo nombre/descripción si ya existe."""
+        role = self.db.query(Role).filter(Role.slug == slug).first()
         if role is None:
+            permissions = (
+                self.db.query(Permission).filter(Permission.code.in_(permission_codes)).all()
+                if permission_codes
+                else []
+            )
             role = Role(slug=slug, name=name, description=description, permissions=permissions)
             self.db.add(role)
-            return role
+            self.db.flush()
+            return role, True
 
         role.name = name
         role.description = description
+        return role, False
+
+    def sync_role_permissions(self, role: Role, permission_codes: list[str]) -> Role:
+        permissions = (
+            self.db.query(Permission).filter(Permission.code.in_(permission_codes)).all()
+            if permission_codes
+            else []
+        )
         role.permissions = permissions
+        return role
+
+    def add_permissions_to_role(self, role: Role, permission_codes: list[str]) -> Role:
+        if not permission_codes:
+            return role
+        existing = {permission.code for permission in role.permissions}
+        missing_codes = [code for code in permission_codes if code not in existing]
+        if not missing_codes:
+            return role
+        to_add = self.db.query(Permission).filter(Permission.code.in_(missing_codes)).all()
+        if to_add:
+            role.permissions = [*list(role.permissions), *to_add]
+        return role
+
+    def get_role_by_id(self, role_id: int) -> Role | None:
+        return (
+            self.db.query(Role)
+            .options(joinedload(Role.permissions))
+            .filter(Role.id == role_id)
+            .first()
+        )
+
+    def update_role_permissions(self, role: Role, permission_codes: list[str]) -> Role:
+        unique_codes = sorted(set(permission_codes))
+        if unique_codes:
+            permissions = (
+                self.db.query(Permission).filter(Permission.code.in_(unique_codes)).all()
+            )
+            found = {permission.code for permission in permissions}
+            missing = [code for code in unique_codes if code not in found]
+            if missing:
+                raise ValueError(f"Permisos inexistentes: {', '.join(missing)}")
+        else:
+            permissions = []
+
+        role.permissions = permissions
+        self.db.commit()
+        self.db.refresh(role)
         return role
 
     def commit(self) -> None:

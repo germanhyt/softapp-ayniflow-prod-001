@@ -74,3 +74,7 @@ class UpdateUserPasswordRequest(BaseModel):
 class UpdateUserPasswordResponse(BaseModel):
     message: str
     password: str
+
+
+class UpdateRolePermissionsRequest(BaseModel):
+    permission_codes: list[str] = Field(default_factory=list)

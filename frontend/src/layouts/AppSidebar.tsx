@@ -51,9 +51,11 @@ function NavItem({
 function FinanceNavGroup({
   collapsed,
   onNavigate,
+  showIntegrations,
 }: {
   collapsed: boolean
   onNavigate?: () => void
+  showIntegrations: boolean
 }) {
   const location = useLocation()
   const isFinanceRoute = location.pathname.startsWith('/finance')
@@ -72,7 +74,9 @@ function FinanceNavGroup({
     { to: '/finance/savings', icon: HandCoins, label: 'Ahorros' },
     { to: '/finance/loans', icon: Landmark, label: 'Préstamos y cobranzas' },
     { to: '/finance/cash-closing', icon: Calculator, label: 'Cierre de caja' },
-    { to: '/finance/integrations', icon: Plug, label: 'Integraciones' },
+    ...(showIntegrations
+      ? [{ to: '/finance/integrations', icon: Plug, label: 'Integraciones', end: false }]
+      : []),
   ]
 
   if (collapsed) {
@@ -136,6 +140,12 @@ export function AppSidebar() {
   const { data: user } = useCurrentUser()
   const { isOpen, isCollapsed, isMobile, closeMobile } = useSidebar()
   const collapsed = !isMobile && isCollapsed
+  const canFinance = Boolean(user?.permissions.includes('finance:read'))
+  const canIntegrations = Boolean(
+    user?.permissions.some((code) =>
+      ['integrations:read', 'integrations:write', 'integrations:gmail_connect'].includes(code),
+    ),
+  )
 
   if (isMobile && !isOpen) {
     return null
@@ -172,8 +182,21 @@ export function AppSidebar() {
             collapsed={collapsed}
             onNavigate={isMobile ? closeMobile : undefined}
           />
-          {user?.permissions.includes('finance:read') && (
-            <FinanceNavGroup collapsed={collapsed} onNavigate={isMobile ? closeMobile : undefined} />
+          {canFinance && (
+            <FinanceNavGroup
+              collapsed={collapsed}
+              onNavigate={isMobile ? closeMobile : undefined}
+              showIntegrations={canIntegrations}
+            />
+          )}
+          {!canFinance && canIntegrations && (
+            <NavItem
+              to="/finance/integrations"
+              icon={Plug}
+              label="Integraciones"
+              collapsed={collapsed}
+              onNavigate={isMobile ? closeMobile : undefined}
+            />
           )}
           {user?.permissions.includes('users:read') && (
             <NavItem

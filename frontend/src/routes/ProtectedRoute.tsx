@@ -5,17 +5,18 @@ import { useCurrentUser } from '../modules/auth/application/hooks/useAuth'
 
 interface ProtectedRouteProps {
   permission?: string
+  anyPermission?: string[]
 }
 
-export function ProtectedRoute({ permission }: ProtectedRouteProps) {
+export function ProtectedRoute({ permission, anyPermission }: ProtectedRouteProps) {
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />
   }
 
-  return <ProtectedContent permission={permission} />
+  return <ProtectedContent permission={permission} anyPermission={anyPermission} />
 }
 
-function ProtectedContent({ permission }: ProtectedRouteProps) {
+function ProtectedContent({ permission, anyPermission }: ProtectedRouteProps) {
   const { data: user, isLoading, isError } = useCurrentUser()
 
   if (isLoading) {
@@ -31,6 +32,13 @@ function ProtectedContent({ permission }: ProtectedRouteProps) {
   }
 
   if (permission && !user.permissions.includes(permission)) {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  if (
+    anyPermission?.length &&
+    !anyPermission.some((code) => user.permissions.includes(code))
+  ) {
     return <Navigate to="/dashboard" replace />
   }
 

@@ -183,7 +183,19 @@ DATABASE_URL=sqlite:// pytest -q
 
 ### CI
 
-GitHub Actions en `.github/workflows/ci.yml` ejecuta tests backend y build frontend en cada push/PR.
+GitHub Actions en `.github/workflows/ci.yml` ejecuta tests backend, typecheck y build frontend en cada push/PR.
+
+### CD (VPS)
+
+`.github/workflows/deploy.yml` despliega a Mivps **solo si CI en `main` termina OK** (o con `workflow_dispatch` manual).
+
+Flujo:
+
+1. Push a `main` → CI (tests + build)
+2. Si CI pasa → SSH al VPS → `git reset --hard origin/main` → `docker compose ... up -d --build`
+3. Healthcheck `GET /health/live` dentro del contenedor backend
+
+Script manual equivalente en el VPS: `bash scripts/deploy-mivps.sh`
 
 ### Verificación local pre-producción
 
@@ -194,6 +206,20 @@ bash scripts/verify-production.sh
 ---
 
 ## Producción y PWA
+
+### Seeds en producción
+
+Con `DEBUG=false` el arranque **solo** aplica seeds estructurales:
+
+| Seed | Producción |
+|------|------------|
+| `seed_auth_data` (permisos, roles, admin si no existe) | Sí |
+| `seed_finance_catalogs` (bancos/categorías/tipos de pago base) | Sí (idempotente) |
+| `seed_integration_settings` (toggles/config keys) | Sí (idempotente) |
+| `seed_finance_data` (transacciones/presupuestos de ejemplo) | **No** |
+| `seed_demo_data.py` | **Nunca** en prod |
+
+Los roles de sistema (`admin` / `operator` / `reader`) se re-sincronizan a la matriz canónica de permisos al arrancar.
 
 ### Despliegue con Docker
 
@@ -213,11 +239,12 @@ docker compose -f docker-compose.prod.yml ps
 
 Checklist antes de exponer:
 
-- `DEBUG=false`
+- `DEBUG=false` (obligatorio; evita seed de datos de ejemplo)
 - `JWT_SECRET_KEY`, `WEBHOOK_SECRET` y `MYSQL_PASSWORD` únicos
 - `ADMIN_PASSWORD` distinta al valor inicial
 - `CORS_ORIGINS` y `PUBLIC_APP_URL` apuntando al dominio real
 - HTTPS delante de nginx (reverse proxy o certificado en el host)
+- Tras desplegar RBAC: volver a iniciar sesión para refrescar permisos del JWT
 
 El backend registra advertencias al arrancar si detecta secretos por defecto con `DEBUG=false`.
 

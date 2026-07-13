@@ -1,17 +1,23 @@
 from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.security import hash_password
-from app.modules.auth.domain.models import Permission, Role, User
+from app.modules.auth.domain.models import User
 from app.modules.auth.infrastructure.repositories import AuthRepository
 
 PERMISSIONS = [
     ("users:read", "Ver usuarios"),
     ("users:write", "Gestionar usuarios"),
     ("roles:read", "Ver roles y permisos"),
+    ("roles:write", "Editar permisos de roles"),
     ("finance:read", "Ver módulo financiero"),
     ("finance:write", "Gestionar operaciones financieras"),
+    ("integrations:read", "Ver módulo de integraciones"),
+    ("integrations:write", "Gestionar configuración de integraciones"),
+    ("integrations:gmail_connect", "Vincular y desvincular correo Gmail"),
 ]
 
+# Roles de sistema: sus permisos se re-sincronizan al arrancar con estos defaults.
+# Si personalizas un rol desde la UI y reinicias el backend, volverá a esta matriz.
 ROLES = {
     "admin": {
         "name": "Administrador",
@@ -20,13 +26,20 @@ ROLES = {
     },
     "operator": {
         "name": "Operador",
-        "description": "Operaciones financieras y consulta de usuarios",
-        "permissions": ["users:read", "finance:read", "finance:write"],
+        "description": "Operaciones financieras y vinculación de correo Gmail",
+        "permissions": [
+            "finance:read",
+            "finance:write",
+            "integrations:read",
+            "integrations:gmail_connect",
+        ],
     },
     "reader": {
         "name": "Lector",
-        "description": "Solo lectura de información",
-        "permissions": ["users:read", "finance:read"],
+        "description": "Solo lectura del módulo financiero",
+        "permissions": [
+            "finance:read",
+        ],
     },
 }
 
@@ -42,7 +55,14 @@ def seed_auth_data() -> None:
         repository.commit()
 
         for slug, data in ROLES.items():
-            repository.upsert_role(slug, data["name"], data["description"], data["permissions"])
+            role, _created = repository.ensure_role(
+                slug,
+                data["name"],
+                data["description"],
+                data["permissions"],
+            )
+            # Matriz canónica de roles de sistema (admin / operator / reader).
+            repository.sync_role_permissions(role, data["permissions"])
 
         repository.commit()
 

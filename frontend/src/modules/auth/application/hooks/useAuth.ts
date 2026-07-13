@@ -4,7 +4,9 @@ import { clearAccessToken, setAccessToken } from '../../../../core/sessions/auth
 import type {
   CreateUserPayload,
   LoginPayload,
+  Permission,
   Role,
+  UpdateRolePermissionsPayload,
   UpdateUserPasswordPayload,
   UpdateUserPayload,
   User,
@@ -13,9 +15,11 @@ import {
   createUserRequest,
   deleteUserRequest,
   fetchCurrentUser,
+  fetchPermissions,
   fetchRoles,
   fetchUsers,
   loginRequest,
+  updateRolePermissionsRequest,
   updateUserPasswordRequest,
   updateUserRequest,
 } from '../../infrastructure/repository/authRepository'
@@ -65,6 +69,14 @@ export function useRoles(enabled = true) {
   })
 }
 
+export function usePermissions(enabled = true) {
+  return useQuery<Permission[]>({
+    queryKey: ['permissions'],
+    queryFn: fetchPermissions,
+    enabled,
+  })
+}
+
 export function useCreateUser() {
   const queryClient = useQueryClient()
 
@@ -105,6 +117,31 @@ export function useDeleteUser() {
   })
 }
 
+export function useUpdateRolePermissions() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      roleId,
+      payload,
+    }: {
+      roleId: number
+      payload: UpdateRolePermissionsPayload
+    }) => updateRolePermissionsRequest(roleId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] })
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+  })
+}
+
 export function hasPermission(user: { permissions: string[] } | undefined, code: string): boolean {
   return Boolean(user?.permissions.includes(code))
+}
+
+export function hasAnyPermission(
+  user: { permissions: string[] } | undefined,
+  codes: string[],
+): boolean {
+  return codes.some((code) => hasPermission(user, code))
 }

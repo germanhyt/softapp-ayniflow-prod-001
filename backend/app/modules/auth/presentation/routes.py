@@ -14,8 +14,10 @@ from app.modules.auth.presentation.deps import (
 from app.modules.auth.presentation.schemas import (
     CreateUserRequest,
     LoginRequest,
+    PermissionResponse,
     RoleResponse,
     TokenResponse,
+    UpdateRolePermissionsRequest,
     UpdateUserPasswordRequest,
     UpdateUserPasswordResponse,
     UpdateUserRequest,
@@ -117,6 +119,7 @@ def delete_user(
 
 
 roles_router = APIRouter(prefix="/roles", tags=["roles"])
+permissions_router = APIRouter(prefix="/permissions", tags=["permissions"])
 
 
 @roles_router.get("", response_model=list[RoleResponse])
@@ -126,3 +129,25 @@ def list_roles(
 ):
     repository = AuthRepository(db)
     return repository.list_roles()
+
+
+@roles_router.put("/{role_id}/permissions", response_model=RoleResponse)
+def update_role_permissions(
+    role_id: int,
+    payload: UpdateRolePermissionsRequest,
+    _: User = Depends(require_permission("roles:write")),
+    service: AuthService = Depends(get_auth_service),
+):
+    return service.update_role_permissions(
+        role_id=role_id,
+        permission_codes=payload.permission_codes,
+    )
+
+
+@permissions_router.get("", response_model=list[PermissionResponse])
+def list_permissions(
+    _: User = Depends(require_permission("roles:read")),
+    db: Session = Depends(get_db),
+):
+    repository = AuthRepository(db)
+    return repository.list_permissions()

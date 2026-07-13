@@ -6,7 +6,11 @@ import { ToggleSwitch } from '../../../core/components/ToggleSwitch'
 import { alertError, alertSuccess, confirmAction } from '../../../core/utils/alerts'
 import { getApiErrorMessage } from '../../../core/utils/apiError'
 import { formatDateTimeWithSeconds } from '../../../core/utils/datetime'
-import { hasPermission, useCurrentUser } from '../../auth/application/hooks/useAuth'
+import {
+  hasAnyPermission,
+  hasPermission,
+  useCurrentUser,
+} from '../../auth/application/hooks/useAuth'
 import {
   useConnectGmail,
   useDisconnectGmail,
@@ -20,6 +24,7 @@ import {
   useUpdateIntegrationSetting,
 } from '../application/hooks/useFinance'
 import type { IntegrationSettingItem } from '../domain/models/finance.types'
+import { isGmailOAuthResultMessage } from './GmailOAuthCallbackPage'
 
 function StatusCard({
   label,
@@ -154,7 +159,14 @@ function useSettingsMap(settings: IntegrationSettingItem[] | undefined) {
 
 export function IntegrationsPage() {
   const { data: user } = useCurrentUser()
-  const canManage = hasPermission(user, 'finance:read')
+  const canAccess = hasAnyPermission(user, [
+    'integrations:read',
+    'integrations:write',
+    'integrations:gmail_connect',
+  ])
+  const canWrite = hasPermission(user, 'integrations:write')
+  const canGmail = hasAnyPermission(user, ['integrations:gmail_connect', 'integrations:write'])
+
   const { data: status, refetch: refetchStatus } = useIntegrationsStatus()
   const { data: gmailConnection, refetch: refetchGmail } = useGmailConnection()
   const { data: gmailPollStatus } = useGmailPollStatus()
@@ -180,7 +192,14 @@ export function IntegrationsPage() {
     ? updateIntegrationSetting.variables?.key
     : undefined
 
+  const refreshGmailState = () => {
+    void refetchStatus()
+    void refetchGmail()
+    void queryClient.invalidateQueries({ queryKey: ['finance', 'integrations'] })
+  }
+
   const saveIntegrationToggle = (item: IntegrationSettingItem, enabled: boolean) => {
+    if (!canWrite) return
     updateIntegrationSetting.mutate(
       { key: item.key, isEnabled: enabled },
       {
@@ -204,7 +223,7 @@ export function IntegrationsPage() {
 
   const feature = (key: string) => {
     const item = getSetting(key)
-    if (!item) return null
+    if (!item || !canWrite) return null
     return (
       <FeatureToggleRow
         key={item.key}
@@ -218,7 +237,7 @@ export function IntegrationsPage() {
 
   const config = (key: string) => {
     const item = getSetting(key)
-    if (!item) return null
+    if (!item || !canWrite) return null
     return (
       <ConfigField
         key={item.key}
@@ -255,10 +274,38 @@ export function IntegrationsPage() {
       setMessage(reason ? `No se pudo conectar Gmail: ${reason}` : 'No se pudo conectar Gmail.')
     }
 
-    void refetchStatus()
-    void refetchGmail()
+    refreshGmailState()
     setSearchParams({}, { replace: true })
-  }, [searchParams, setSearchParams, refetchGmail, refetchStatus])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, setSearchParams])
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return
+      if (!isGmailOAuthResultMessage(event.data)) return
+
+      if (event.data.status === 'connected') {
+        setMessage(
+          event.data.email
+            ? `Gmail conectado: ${event.data.email}`
+            : 'Gmail conectado correctamente.',
+        )
+        void alertSuccess(
+          'Gmail conectado',
+          event.data.email ? `Cuenta: ${event.data.email}` : 'La cuenta se vinculó correctamente.',
+        )
+      } else {
+        const reason = event.data.reason
+        setMessage(reason ? `No se pudo conectar Gmail: ${reason}` : 'No se pudo conectar Gmail.')
+        void alertError('Error', reason || 'No se pudo conectar Gmail.')
+      }
+      refreshGmailState()
+    }
+
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleSheetsSync = async () => {
     setMessage(null)
@@ -299,8 +346,8 @@ export function IntegrationsPage() {
     }
   }
 
-  if (!canManage) {
-    return <p className="text-sm text-muted">No tienes permisos para gestionar integraciones.</p>
+  if (!canAccess) {
+    return <p className="text-sm text-muted">No tienes permisos para ver integraciones.</p>
   }
 
   return (
@@ -308,13 +355,13 @@ export function IntegrationsPage() {
       <div>
         <h2 className="text-xl font-semibold">Integraciones</h2>
         <p className="text-sm text-muted">
-          Activa funciones y ajusta parámetros operativos. Los toggles se guardan al instante; los campos de
-          texto al salir del input. Los secretos de infraestructura (OAuth, cuentas de
-          servicio, webhook secret) siguen en <code>.env</code>; aquí defines toggles y valores editables.
+          {canWrite
+            ? 'Activa funciones y ajusta parámetros operativos. Los toggles se guardan al instante; los campos de texto al salir del input.'
+            : 'Puedes vincular tu correo Gmail. La configuración avanzada la gestiona un administrador.'}
         </p>
       </div>
 
-      {status && (
+      {canWrite && status && (
         <section className="card space-y-3">
           <h3 className="font-medium">Estado de integraciones</h3>
           <div className="integration-status-grid">
@@ -327,176 +374,206 @@ export function IntegrationsPage() {
         </section>
       )}
 
-      <section className="card space-y-4">
-        <h3 className="font-medium">Gmail BCP/Yape</h3>
-        <p className="text-sm text-muted">
-          OAuth web e importación de correos. El polling en background respeta los toggles y el intervalo configurado.
-        </p>
+      {(canGmail || canWrite) && (
+        <section className="card space-y-4">
+          <h3 className="font-medium">Gmail BCP/Yape</h3>
+          <p className="text-sm text-muted">
+            Vincula tu cuenta de Gmail en una ventana emergente para importar correos BCP/Yape.
+          </p>
 
-        {gmailPollStatus && (
-          <div className="rounded-lg border p-3 text-sm" style={{ borderColor: 'var(--premium-border)' }}>
-            <p className="font-medium">Estado realtime efectivo</p>
-            <p className="mt-1 text-muted">
-              Loop: <strong>{gmailPollStatus.loop_running ? 'Activo' : 'Inactivo'}</strong> · Toggle:
-              <strong> {gmailPollStatus.realtime_enabled ? 'On' : 'Off'}</strong> · Intervalo:
-              <strong> {gmailPollStatus.interval_seconds}s</strong>
-            </p>
-            <p className="text-muted">
-              Query: <code>{gmailPollStatus.query || '(vacía)'}</code> · Filtro correos nuevos:
-              <strong> {gmailPollStatus.mark_unread_only ? 'UNREAD' : 'Todos'}</strong>
-            </p>
-            <p className="text-muted">
-              Último chequeo:{' '}
-              <strong>
-                {formatDateTimeWithSeconds(
-                  gmailPollStatus.last_checked_at,
-                  'aún sin ejecución',
-                )}
-              </strong>
-            </p>
-            {gmailPollStatus.last_result && (
-              <p className="text-muted">
-                Último resultado: <code>{JSON.stringify(gmailPollStatus.last_result)}</code>
+          {canWrite && gmailPollStatus && (
+            <div className="rounded-lg border p-3 text-sm" style={{ borderColor: 'var(--premium-border)' }}>
+              <p className="font-medium">Estado realtime efectivo</p>
+              <p className="mt-1 text-muted">
+                Loop: <strong>{gmailPollStatus.loop_running ? 'Activo' : 'Inactivo'}</strong> · Toggle:
+                <strong> {gmailPollStatus.realtime_enabled ? 'On' : 'Off'}</strong> · Intervalo:
+                <strong> {gmailPollStatus.interval_seconds}s</strong>
               </p>
+              <p className="text-muted">
+                Query: <code>{gmailPollStatus.query || '(vacía)'}</code> · Filtro correos nuevos:
+                <strong> {gmailPollStatus.mark_unread_only ? 'UNREAD' : 'Todos'}</strong>
+              </p>
+              <p className="text-muted">
+                Último chequeo:{' '}
+                <strong>
+                  {formatDateTimeWithSeconds(
+                    gmailPollStatus.last_checked_at,
+                    'aún sin ejecución',
+                  )}
+                </strong>
+              </p>
+              {gmailPollStatus.last_result && (
+                <p className="text-muted">
+                  Último resultado: <code>{JSON.stringify(gmailPollStatus.last_result)}</code>
+                </p>
+              )}
+              {gmailPollStatus.last_error && (
+                <p className="alert-error text-sm">Último error polling: {gmailPollStatus.last_error}</p>
+              )}
+            </div>
+          )}
+
+          {canWrite && (
+            <>
+              <div className="space-y-3">
+                {feature('gmail_historical')}
+                {feature('gmail_realtime')}
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {config('gmail_query')}
+                {config('gmail_poll_interval_seconds')}
+              </div>
+            </>
+          )}
+
+          {gmailConnection && !gmailConnection.oauth_app_configured && (
+            <p className="alert-error text-sm">
+              Falta configurar <strong>GMAIL_CLIENT_ID</strong> y <strong>GMAIL_CLIENT_SECRET</strong> en el backend.
+            </p>
+          )}
+
+          {gmailConnected && gmailConnection?.connected_email && (
+            <p className="text-sm">
+              Conectado como: <strong>{gmailConnection.connected_email}</strong>
+            </p>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            {canGmail && (
+              !gmailConnected ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMessage(null)
+                    connectGmail.mutate(undefined, {
+                      onError: (error) => {
+                        void alertError(
+                          'No se pudo abrir Google',
+                          getApiErrorMessage(error, 'No se pudo iniciar la vinculación con Gmail.'),
+                        )
+                      },
+                    })
+                  }}
+                  disabled={connectGmail.isPending || gmailConnection?.oauth_app_configured === false}
+                  className="btn-primary"
+                >
+                  {connectGmail.isPending ? 'Abriendo Google...' : 'Conectar Gmail'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const confirmed = await confirmAction(
+                      'Desconectar Gmail',
+                      '¿Desconectar la cuenta de Gmail vinculada?',
+                      'Desconectar',
+                    )
+                    if (!confirmed) return
+                    setMessage(null)
+                    try {
+                      await disconnectGmail.mutateAsync()
+                      setMessage('Gmail desconectado.')
+                      await alertSuccess('Gmail desconectado')
+                    } catch {
+                      setMessage('No se pudo desconectar Gmail.')
+                      await alertError('Error', 'No se pudo desconectar Gmail.')
+                    }
+                  }}
+                  disabled={disconnectGmail.isPending}
+                  className="btn-secondary"
+                >
+                  Desconectar Gmail
+                </button>
+              )
             )}
-            {gmailPollStatus.last_error && (
-              <p className="alert-error text-sm">Último error polling: {gmailPollStatus.last_error}</p>
+            {canGmail && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleGmailHistorical}
+                  disabled={
+                    syncGmailHistorical.isPending ||
+                    !gmailConnected ||
+                    !isSettingEnabled('gmail_historical')
+                  }
+                  className="btn-primary"
+                >
+                  {syncGmailHistorical.isPending ? 'Importando histórico...' : 'Importar correos históricos'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleGmailPoll}
+                  disabled={
+                    pollGmailNew.isPending ||
+                    !gmailConnected ||
+                    !isSettingEnabled('gmail_realtime')
+                  }
+                  className="btn-secondary"
+                >
+                  {pollGmailNew.isPending ? 'Procesando...' : 'Procesar correos nuevos'}
+                </button>
+              </>
             )}
           </div>
-        )}
 
-        <div className="space-y-3">
-          {feature('gmail_historical')}
-          {feature('gmail_realtime')}
-        </div>
+          {gmailConnection?.redirect_uri && canWrite && (
+            <p className="text-xs text-muted">
+              Redirect URI en Google Cloud:{' '}
+              <code className="font-mono">{gmailConnection.redirect_uri}</code>
+            </p>
+          )}
+        </section>
+      )}
 
-        <div className="grid gap-3 md:grid-cols-2">
-          {config('gmail_query')}
-          {config('gmail_poll_interval_seconds')}
-        </div>
-
-        {gmailConnection && !gmailConnection.oauth_app_configured && (
-          <p className="alert-error text-sm">
-            Falta configurar <strong>GMAIL_CLIENT_ID</strong> y <strong>GMAIL_CLIENT_SECRET</strong> en el backend.
-          </p>
-        )}
-
-        {gmailConnected && gmailConnection?.connected_email && (
-          <p className="text-sm">
-            Conectado como: <strong>{gmailConnection.connected_email}</strong>
-          </p>
-        )}
-
-        <div className="flex flex-wrap gap-2">
-          {!gmailConnected ? (
+      {canWrite && (
+        <>
+          <section className="card space-y-4">
+            <h3 className="font-medium">Google Sheets</h3>
+            <p className="text-sm text-muted">
+              Credenciales de cuenta de servicio en <code>.env</code>. ID y rango configurables abajo.
+            </p>
+            {feature('google_sheets')}
+            <div className="grid gap-3 md:grid-cols-2">
+              {config('google_spreadsheet_id')}
+              {config('google_spreadsheet_range')}
+            </div>
             <button
               type="button"
-              onClick={() => {
-                setMessage(null)
-                connectGmail.mutate()
-              }}
-              disabled={connectGmail.isPending || gmailConnection?.oauth_app_configured === false}
-              className="btn-primary"
-            >
-              {connectGmail.isPending ? 'Redirigiendo...' : 'Conectar Gmail'}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={async () => {
-                const confirmed = await confirmAction(
-                  'Desconectar Gmail',
-                  '¿Desconectar la cuenta de Gmail vinculada?',
-                  'Desconectar',
-                )
-                if (!confirmed) return
-                setMessage(null)
-                try {
-                  await disconnectGmail.mutateAsync()
-                  setMessage('Gmail desconectado.')
-                  await alertSuccess('Gmail desconectado')
-                } catch {
-                  setMessage('No se pudo desconectar Gmail.')
-                  await alertError('Error', 'No se pudo desconectar Gmail.')
-                }
-              }}
-              disabled={disconnectGmail.isPending}
+              onClick={handleSheetsSync}
+              disabled={
+                syncSheets.isPending ||
+                status?.google_sheets.configured === false ||
+                !isSettingEnabled('google_sheets')
+              }
               className="btn-secondary"
             >
-              Desconectar Gmail
+              {syncSheets.isPending ? 'Sincronizando...' : 'Sincronizar ahora'}
             </button>
-          )}
-          <button
-            type="button"
-            onClick={handleGmailHistorical}
-            disabled={syncGmailHistorical.isPending || !gmailConnected || !isSettingEnabled('gmail_historical')}
-            className="btn-primary"
-          >
-            {syncGmailHistorical.isPending ? 'Importando histórico...' : 'Importar correos históricos'}
-          </button>
-          <button
-            type="button"
-            onClick={handleGmailPoll}
-            disabled={pollGmailNew.isPending || !gmailConnected || !isSettingEnabled('gmail_realtime')}
-            className="btn-secondary"
-          >
-            {pollGmailNew.isPending ? 'Procesando...' : 'Procesar correos nuevos'}
-          </button>
-        </div>
+          </section>
 
-        {gmailConnection?.redirect_uri && (
-          <p className="text-xs text-muted">
-            Redirect URI en Google Cloud:{' '}
-            <code className="font-mono">{gmailConnection.redirect_uri}</code>
-          </p>
-        )}
-      </section>
+          <section className="card space-y-4">
+            <h3 className="font-medium">Webhooks</h3>
+            <p className="text-sm text-muted">
+              <code>WEBHOOK_SECRET</code> permanece en <code>.env</code>. La URL de alertas es configurable.
+            </p>
+            <div className="space-y-3">
+              {feature('webhook_inbound')}
+              {feature('webhook_notifications')}
+            </div>
+            {config('webhook_notification_url')}
+          </section>
 
-      <section className="card space-y-4">
-        <h3 className="font-medium">Google Sheets</h3>
-        <p className="text-sm text-muted">
-          Credenciales de cuenta de servicio en <code>.env</code>. ID y rango configurables abajo.
-        </p>
-        {feature('google_sheets')}
-        <div className="grid gap-3 md:grid-cols-2">
-          {config('google_spreadsheet_id')}
-          {config('google_spreadsheet_range')}
-        </div>
-        <button
-          type="button"
-          onClick={handleSheetsSync}
-          disabled={
-            syncSheets.isPending ||
-            status?.google_sheets.configured === false ||
-            !isSettingEnabled('google_sheets')
-          }
-          className="btn-secondary"
-        >
-          {syncSheets.isPending ? 'Sincronizando...' : 'Sincronizar ahora'}
-        </button>
-      </section>
-
-      <section className="card space-y-4">
-        <h3 className="font-medium">Webhooks</h3>
-        <p className="text-sm text-muted">
-          <code>WEBHOOK_SECRET</code> permanece en <code>.env</code>. La URL de alertas es configurable.
-        </p>
-        <div className="space-y-3">
-          {feature('webhook_inbound')}
-          {feature('webhook_notifications')}
-        </div>
-        {config('webhook_notification_url')}
-      </section>
-
-      <section className="card space-y-4">
-        <h3 className="font-medium">OCR vouchers (Gemini)</h3>
-        <p className="text-sm text-muted">
-          Con Gemini activo se usa la API (clave aquí o <code>GEMINI_API_KEY</code> en <code>.env</code>).
-          Si lo desactivas, el escaneo usa OCR local en el navegador (Tesseract), sin llamadas al servidor.
-        </p>
-        {feature('gemini_ocr')}
-        {config('gemini_api_key')}
-      </section>
+          <section className="card space-y-4">
+            <h3 className="font-medium">OCR vouchers (Gemini)</h3>
+            <p className="text-sm text-muted">
+              Con Gemini activo se usa la API (clave aquí o <code>GEMINI_API_KEY</code> en <code>.env</code>).
+              Si lo desactivas, el escaneo usa OCR local en el navegador (Tesseract), sin llamadas al servidor.
+            </p>
+            {feature('gemini_ocr')}
+            {config('gemini_api_key')}
+          </section>
+        </>
+      )}
 
       {message && <p className="alert-info">{message}</p>}
     </div>

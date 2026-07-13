@@ -1,14 +1,21 @@
 name: Deploy to Mivps
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: github.repository == 'germanhyt/softapp-ayniflow-prod-001'
+    if: >
+      github.repository == 'germanhyt/softapp-ayniflow-prod-001' &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      )
     steps:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
@@ -19,8 +26,34 @@ jobs:
           script: |
             set -euo pipefail
             APP_DIR="/home/projects2/ayniflow"
+            COMPOSE_FILE="docker-compose.prod.yml"
+            ENV_FILE=".env.production"
             cd "$APP_DIR"
+
+            if [ ! -f "$ENV_FILE" ]; then
+              echo "Missing $ENV_FILE in $APP_DIR" >&2
+              exit 1
+            fi
+
+            # No correr seed demo en producción.
+            # El backend con DEBUG=false solo aplica seeds estructurales:
+            # permisos/roles, catálogos e integration settings.
+
             git fetch origin main
             git reset --hard origin/main
-            docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
-            docker compose -f docker-compose.prod.yml --env-file .env.production ps
+
+            docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --build
+            docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" ps
+
+            echo "Esperando healthcheck del backend..."
+            for i in $(seq 1 30); do
+              if docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T backend \
+                curl -fsS http://127.0.0.1:8000/health/live >/dev/null; then
+                echo "Healthcheck OK"
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "Healthcheck falló tras el deploy" >&2
+            docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" logs --tail=80 backend
+            exit 1

@@ -6,6 +6,7 @@ import { isAuthenticated } from '../core/sessions/authStorage'
 import { DashboardPage } from '../modules/auth/views/DashboardPage'
 import { LoginPage } from '../modules/auth/views/LoginPage'
 import { UsersPage } from '../modules/auth/views/UsersPage'
+import { GmailOAuthCallbackPage } from '../modules/finance/views/GmailOAuthCallbackPage'
 import { BudgetsPage } from '../modules/finance/views/BudgetsPage'
 import { CashClosingPage } from '../modules/finance/views/CashClosingPage'
 import { FinanceOverviewPage } from '../modules/finance/views/FinanceOverviewPage'
@@ -37,6 +38,10 @@ export function AppRoutes() {
       />
 
       <Route element={<ProtectedRoute />}>
+        <Route path="/oauth/gmail/callback" element={<GmailOAuthCallbackPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
@@ -49,6 +54,22 @@ export function AppRoutes() {
         </Route>
       </Route>
 
+      <Route
+        element={
+          <ProtectedRoute
+            anyPermission={[
+              'integrations:read',
+              'integrations:write',
+              'integrations:gmail_connect',
+            ]}
+          />
+        }
+      >
+        <Route element={<AppLayout />}>
+          <Route path="/finance/integrations" element={<IntegrationsPage />} />
+        </Route>
+      </Route>
+
       <Route element={<ProtectedRoute permission="finance:read" />}>
         <Route element={<AppLayout />}>
           <Route path="/finance" element={<FinanceOverviewPage />} />
@@ -57,7 +78,6 @@ export function AppRoutes() {
           <Route path="/finance/savings" element={<SavingsPage />} />
           <Route path="/finance/loans" element={<LoansPage />} />
           <Route path="/finance/cash-closing" element={<CashClosingPage />} />
-          <Route path="/finance/integrations" element={<IntegrationsPage />} />
         </Route>
       </Route>
 

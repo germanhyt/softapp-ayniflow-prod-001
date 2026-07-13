@@ -357,9 +357,37 @@ export function useGmailPollStatus() {
 
 export function useConnectGmail() {
   return useMutation({
-    mutationFn: () => startGmailOAuth(),
-    onSuccess: (url) => {
-      window.location.href = url
+    mutationFn: async () => {
+      const width = 520
+      const height = 720
+      const left = window.screenX + Math.max(0, (window.outerWidth - width) / 2)
+      const top = window.screenY + Math.max(0, (window.outerHeight - height) / 2)
+      const features = [
+        `width=${width}`,
+        `height=${height}`,
+        `left=${left}`,
+        `top=${top}`,
+        'resizable=yes',
+        'scrollbars=yes',
+      ].join(',')
+
+      // Abrir en el gesto del usuario evita bloqueo de popups.
+      const popup = window.open('about:blank', 'gmail-oauth', features)
+      if (!popup) {
+        throw new Error(
+          'El navegador bloqueó la ventana emergente. Permite popups para este sitio e inténtalo de nuevo.',
+        )
+      }
+      popup.document.write('<p style="font-family:sans-serif;padding:1rem">Abriendo Google…</p>')
+
+      try {
+        const url = await startGmailOAuth()
+        popup.location.href = url
+        return url
+      } catch (error) {
+        popup.close()
+        throw error
+      }
     },
   })
 }

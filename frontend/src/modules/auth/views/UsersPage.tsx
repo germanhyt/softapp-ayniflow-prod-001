@@ -13,8 +13,7 @@ import {
 } from '../application/hooks/useAuth'
 import type { Role, User } from '../domain/models/auth.types'
 import { RolesInfoModal } from './components/RolesInfoModal'
-import { UserCreateModal } from './components/UserCreateModal'
-import { UserEditModal } from './components/UserEditModal'
+import { UserFormModal } from './components/UserFormModal'
 
 export function UsersPage() {
   const { data: currentUser } = useCurrentUser()
@@ -22,6 +21,7 @@ export function UsersPage() {
   const deleteUser = useDeleteUser()
   const canManage = hasPermission(currentUser, 'users:write')
   const canViewRoles = hasPermission(currentUser, 'roles:read')
+  const canEditRoles = hasPermission(currentUser, 'roles:write')
   const { data: rolesData } = useRoles(canViewRoles || canManage)
   const roles = ensureArray<Role>(rolesData)
   const users = ensureArray<User>(usersData)
@@ -68,7 +68,7 @@ export function UsersPage() {
         <div>
           <h2 className="text-xl font-semibold">Usuarios</h2>
           <p className="text-sm text-muted">
-            Cada cuenta tiene un único rol y puede gestionar sus propias integraciones según permisos.
+            Cada cuenta tiene un único rol. Los permisos efectivos dependen del rol asignado.
           </p>
         </div>
 
@@ -80,7 +80,7 @@ export function UsersPage() {
               className="btn-secondary inline-flex items-center gap-2"
             >
               <Shield size={16} />
-              Ver roles
+              {canEditRoles ? 'Editar roles' : 'Ver roles'}
             </button>
           )}
           {canManage && (
@@ -183,21 +183,28 @@ export function UsersPage() {
       )}
 
       {canViewRoles && (
-        <RolesInfoModal isOpen={rolesModalOpen} onClose={() => setRolesModalOpen(false)} roles={roles} />
+        <RolesInfoModal
+          isOpen={rolesModalOpen}
+          onClose={() => setRolesModalOpen(false)}
+          roles={roles}
+          canEdit={canEditRoles}
+        />
       )}
 
       {canManage && (
-        <UserCreateModal
+        <UserFormModal
           isOpen={createModalOpen}
           onClose={() => setCreateModalOpen(false)}
+          mode="create"
           roles={roles}
         />
       )}
 
       {canManage && (
-        <UserEditModal
+        <UserFormModal
           isOpen={editModalOpen}
           onClose={closeEditModal}
+          mode="edit"
           user={selectedUser}
           roles={roles}
           isCurrentUser={Boolean(selectedUser && selectedUser.id === currentUser?.id)}

@@ -30,6 +30,7 @@ jobs:
           LOG_JSON: "false"
           WEBHOOK_SECRET: ci-webhook-secret
           JWT_SECRET_KEY: ci-secret-key
+          DEBUG: "true"
         run: pytest -q
 
   frontend:
@@ -48,6 +49,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Typecheck
+        run: npx tsc -p tsconfig.app.json --noEmit
 
       - name: Build
         run: npm run build

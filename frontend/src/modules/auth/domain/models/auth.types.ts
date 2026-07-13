@@ -56,3 +56,7 @@ export interface UpdateUserPasswordResponse {
   message: string
   password: string
 }
+
+export interface UpdateRolePermissionsPayload {
+  permission_codes: string[]
+}

@@ -21,7 +21,12 @@ from app.core.middleware import RateLimitMiddleware, RequestLoggingMiddleware
 from app.modules.auth.application.workspace_seed import ensure_workspace_schema
 from app.modules.auth.application.seed import seed_auth_data
 from app.modules.auth.domain.models import Permission, Role, User  # noqa: F401
-from app.modules.auth.presentation.routes import roles_router, router as auth_router, users_router
+from app.modules.auth.presentation.routes import (
+    permissions_router,
+    roles_router,
+    router as auth_router,
+    users_router,
+)
 from app.modules.finance.application.catalog_seed import seed_finance_catalogs
 from app.modules.finance.application.finance_schema_seed import ensure_finance_schema
 from app.modules.finance.application.integration_settings_seed import seed_integration_settings
@@ -56,10 +61,14 @@ async def lifespan(_: FastAPI):
     Base.metadata.create_all(bind=engine)
     ensure_finance_schema()
     ensure_workspace_schema()
+    # Producción: solo seeds estructurales (RBAC/permisos, catálogos, settings).
+    # Nunca datos demo ni transacciones de ejemplo.
     seed_auth_data()
     seed_finance_catalogs()
     seed_integration_settings()
-    seed_finance_data()
+    if settings.debug:
+        seed_finance_data()
+        logger.info("Seed de datos financieros de ejemplo aplicado (DEBUG=true)")
     for warning in settings.production_warnings():
         logger.warning("Configuración de producción: %s", warning)
     logger.info("Aplicación iniciada")
@@ -122,6 +131,7 @@ def readiness():
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(roles_router)
+app.include_router(permissions_router)
 app.include_router(finance_router)
 app.include_router(finance_ws_router)
 app.include_router(finance_catalog_router)

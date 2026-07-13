@@ -108,3 +108,13 @@ class AuthService:
             raise AppException("Usuario no encontrado", status_code=404)
 
         self.repository.delete_user(user)
+
+    def update_role_permissions(self, *, role_id: int, permission_codes: list[str]):
+        role = self.repository.get_role_by_id(role_id)
+        if role is None:
+            raise AppException("Rol no encontrado", status_code=404)
+
+        try:
+            return self.repository.update_role_permissions(role, permission_codes)
+        except ValueError as exc:
+            raise AppException(str(exc), status_code=400) from exc

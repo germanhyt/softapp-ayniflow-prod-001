@@ -10,7 +10,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.shared.datetime_utils import serialize_datetime
 from app.modules.auth.domain.models import User
-from app.modules.auth.presentation.deps import require_permission
+from app.modules.auth.presentation.deps import require_any_permission, require_permission
 from app.modules.finance.application.gmail_oauth_service import GmailOAuthService
 from app.modules.finance.application.gmail_poll_task import get_poll_runtime_state
 from app.modules.finance.application.integration_settings_service import IntegrationSettingsService
@@ -149,7 +149,13 @@ def webhook_health():
 
 @integrations_router.get("/integrations/status", response_model=IntegrationsStatusResponse)
 def integrations_status(
-    _: User = Depends(require_permission("finance:read")),
+    _: User = Depends(
+        require_any_permission(
+            "integrations:read",
+            "integrations:write",
+            "integrations:gmail_connect",
+        )
+    ),
     repository: FinanceRepository = Depends(get_finance_repository),
 ):
     refresh_token = repository.get_gmail_refresh_token()
@@ -199,7 +205,13 @@ def integrations_status(
 
 @integrations_router.get("/integrations/gmail/connection", response_model=GmailConnectionResponse)
 def gmail_connection_status(
-    _: User = Depends(require_permission("finance:read")),
+    _: User = Depends(
+        require_any_permission(
+            "integrations:read",
+            "integrations:write",
+            "integrations:gmail_connect",
+        )
+    ),
     repository: FinanceRepository = Depends(get_finance_repository),
 ):
     return GmailConnectionResponse(**GmailOAuthService(repository).get_connection_info())
@@ -207,7 +219,13 @@ def gmail_connection_status(
 
 @integrations_router.get("/integrations/gmail/poll-status", response_model=GmailPollStatusResponse)
 def gmail_poll_status(
-    _: User = Depends(require_permission("finance:read")),
+    _: User = Depends(
+        require_any_permission(
+            "integrations:read",
+            "integrations:write",
+            "integrations:gmail_connect",
+        )
+    ),
     repository: FinanceRepository = Depends(get_finance_repository),
 ):
     settings_service = IntegrationSettingsService(repository)
@@ -232,7 +250,9 @@ def gmail_poll_status(
 
 @integrations_router.get("/integrations/gmail/oauth/start", response_model=GmailOAuthStartResponse)
 def gmail_oauth_start(
-    _: User = Depends(require_permission("finance:read")),
+    _: User = Depends(
+        require_any_permission("integrations:gmail_connect", "integrations:write")
+    ),
     repository: FinanceRepository = Depends(get_finance_repository),
 ):
     url = GmailOAuthService(repository).build_authorization_url()
@@ -248,8 +268,13 @@ def gmail_oauth_callback(
 ):
     frontend_base = settings.cors_origins.split(",")[0].strip()
 
+    def _frontend_redirect(params: dict[str, str]) -> RedirectResponse:
+        query = urllib.parse.urlencode(params)
+        # Ruta dedicada para cerrar popup OAuth sin redirigir toda la app.
+        return RedirectResponse(f"{frontend_base}/oauth/gmail/callback?{query}")
+
     if error:
-        return RedirectResponse(f"{frontend_base}/finance/integrations?gmail=error&reason={error}")
+        return _frontend_redirect({"gmail": "error", "reason": error})
 
     if not code or not state:
         raise AppException("Callback OAuth incompleto", status_code=400)
@@ -258,16 +283,16 @@ def gmail_oauth_callback(
         workspace_id = GmailOAuthService.extract_workspace_id_from_state(state)
         repository = FinanceRepository(db, workspace_id=workspace_id)
         email = GmailOAuthService(repository).complete_oauth(code=code, state=state)
-        params = urllib.parse.urlencode({"gmail": "connected", "email": email})
-        return RedirectResponse(f"{frontend_base}/finance/integrations?{params}")
+        return _frontend_redirect({"gmail": "connected", "email": email})
     except AppException as exc:
-        params = urllib.parse.urlencode({"gmail": "error", "reason": str(exc)})
-        return RedirectResponse(f"{frontend_base}/finance/integrations?{params}")
+        return _frontend_redirect({"gmail": "error", "reason": str(exc)})
 
 
 @integrations_router.delete("/integrations/gmail/connection", status_code=204)
 def gmail_disconnect(
-    _: User = Depends(require_permission("finance:read")),
+    _: User = Depends(
+        require_any_permission("integrations:gmail_connect", "integrations:write")
+    ),
     repository: FinanceRepository = Depends(get_finance_repository),
 ):
     GmailOAuthService(repository).disconnect()
@@ -275,7 +300,13 @@ def gmail_disconnect(
 
 @integrations_router.get("/integrations/settings/list", response_model=list[IntegrationSettingResponse])
 def list_integration_settings(
-    _: User = Depends(require_permission("finance:read")),
+    _: User = Depends(
+        require_any_permission(
+            "integrations:read",
+            "integrations:write",
+            "integrations:gmail_connect",
+        )
+    ),
     repository: FinanceRepository = Depends(get_finance_repository),
 ):
     return IntegrationSettingsService(repository).list_settings()
@@ -285,7 +316,7 @@ def list_integration_settings(
 def update_integration_setting(
     setting_key: str,
     payload: IntegrationSettingUpdate,
-    _: User = Depends(require_permission("finance:read")),
+    _: User = Depends(require_permission("integrations:write")),
     repository: FinanceRepository = Depends(get_finance_repository),
 ):
     return IntegrationSettingsService(repository).update_setting(
@@ -298,7 +329,9 @@ def update_integration_setting(
 @integrations_router.post("/integrations/gmail/sync-historical", response_model=GmailSyncResultResponse)
 def sync_gmail_historical(
     max_messages: int | None = Query(default=None, ge=1),
-    _: User = Depends(require_permission("finance:read")),
+    _: User = Depends(
+        require_any_permission("integrations:gmail_connect", "integrations:write")
+    ),
     repository: FinanceRepository = Depends(get_finance_repository),
 ):
     IntegrationSettingsService(repository).require_enabled(
@@ -312,7 +345,9 @@ def sync_gmail_historical(
 def poll_gmail_new(
     max_messages: int = Query(default=50, ge=1, le=200),
     mark_read: bool = Query(default=True),
-    _: User = Depends(require_permission("finance:read")),
+    _: User = Depends(
+        require_any_permission("integrations:gmail_connect", "integrations:write")
+    ),
     repository: FinanceRepository = Depends(get_finance_repository),
 ):
     IntegrationSettingsService(repository).require_enabled(
@@ -325,7 +360,7 @@ def poll_gmail_new(
 @integrations_router.post("/integrations/ocr", response_model=OcrExtractResponse)
 async def extract_voucher_ocr(
     file: UploadFile = File(...),
-    _: User = Depends(require_permission("finance:read")),
+    _: User = Depends(require_any_permission("finance:write", "integrations:write")),
     repository: FinanceRepository = Depends(get_finance_repository),
 ):
     settings_service = IntegrationSettingsService(repository)
@@ -404,7 +439,7 @@ def mark_all_notifications_read(
 @integrations_router.post("/integrations/import/legacy", response_model=ImportResultResponse)
 def import_legacy_rows(
     payload: LegacyImportRequest,
-    _: User = Depends(require_permission("finance:read")),
+    _: User = Depends(require_permission("integrations:write")),
     repository: FinanceRepository = Depends(get_finance_repository),
 ):
     service = IntegrationService(repository)
@@ -413,7 +448,7 @@ def import_legacy_rows(
 
 @integrations_router.post("/integrations/sheets/sync", response_model=ImportResultResponse)
 def sync_google_sheets(
-    _: User = Depends(require_permission("finance:read")),
+    _: User = Depends(require_permission("integrations:write")),
     repository: FinanceRepository = Depends(get_finance_repository),
 ):
     settings_service = IntegrationSettingsService(repository)

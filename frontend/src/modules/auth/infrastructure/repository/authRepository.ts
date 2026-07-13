@@ -3,8 +3,10 @@ import { ensureArray } from '../../../../core/utils/collections'
 import type {
   CreateUserPayload,
   LoginPayload,
+  Permission,
   Role,
   TokenResponse,
+  UpdateRolePermissionsPayload,
   UpdateUserPasswordPayload,
   UpdateUserPasswordResponse,
   UpdateUserPayload,
@@ -54,4 +56,17 @@ export async function deleteUserRequest(userId: number): Promise<void> {
 export async function fetchRoles(): Promise<Role[]> {
   const { data } = await httpClient.get<Role[]>('/roles')
   return ensureArray<Role>(data)
+}
+
+export async function fetchPermissions(): Promise<Permission[]> {
+  const { data } = await httpClient.get<Permission[]>('/permissions')
+  return ensureArray<Permission>(data)
+}
+
+export async function updateRolePermissionsRequest(
+  roleId: number,
+  payload: UpdateRolePermissionsPayload,
+): Promise<Role> {
+  const { data } = await httpClient.put<Role>(`/roles/${roleId}/permissions`, payload)
+  return data
 }

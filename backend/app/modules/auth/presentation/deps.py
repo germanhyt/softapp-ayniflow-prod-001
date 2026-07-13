@@ -67,6 +67,20 @@ def require_permission(permission_code: str) -> Callable:
     return dependency
 
 
+def require_any_permission(*permission_codes: str) -> Callable:
+    def dependency(current_user: User = Depends(get_current_user)) -> User:
+        permissions = collect_permissions(current_user)
+        if not permissions.intersection(permission_codes):
+            required = ", ".join(permission_codes)
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Se requiere al menos uno de estos permisos: {required}",
+            )
+        return current_user
+
+    return dependency
+
+
 def require_any_role(*role_slugs: str) -> Callable:
     def dependency(current_user: User = Depends(get_current_user)) -> User:
         user_roles = set(collect_role_slugs(current_user))

@@ -715,3 +715,53 @@ body {
     }
   }
 }
+
+/* SweetAlert2 — sigue dark/light vía variables del tema */
+.swal2-container.swal2-ayniflow-container {
+  z-index: 10050;
+}
+
+.swal2-popup.swal2-ayniflow {
+  background: var(--premium-surface) !important;
+  color: var(--premium-text) !important;
+  border: 1px solid var(--premium-border);
+  border-radius: 1rem;
+  font-family: var(--font-sans);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+}
+
+.swal2-popup.swal2-ayniflow .swal2-title,
+.swal2-ayniflow-title {
+  color: var(--premium-text) !important;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.swal2-popup.swal2-ayniflow .swal2-html-container,
+.swal2-ayniflow-html {
+  color: var(--premium-text-muted) !important;
+  font-size: 0.925rem;
+}
+
+.swal2-ayniflow-actions {
+  gap: 0.5rem !important;
+  margin-top: 1.25rem !important;
+}
+
+.swal2-popup.swal2-ayniflow .btn-primary,
+.swal2-popup.swal2-ayniflow .btn-secondary {
+  margin: 0;
+  min-width: 6.5rem;
+}
+
+.swal2-popup.swal2-ayniflow .swal2-icon {
+  margin-top: 1.25rem;
+}
+
+.dark .swal2-container.swal2-ayniflow-container {
+  background-color: rgba(0, 0, 0, 0.62) !important;
+}
+
+:root:not(.dark) .swal2-container.swal2-ayniflow-container {
+  background-color: rgba(26, 28, 20, 0.35) !important;
+}
