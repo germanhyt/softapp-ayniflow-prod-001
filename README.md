@@ -219,7 +219,7 @@ Con `DEBUG=false` el arranque **solo** aplica seeds estructurales:
 | `seed_finance_data` (transacciones/presupuestos de ejemplo) | **No** |
 | `seed_demo_data.py` | **Nunca** en prod |
 
-Los roles de sistema (`admin` / `operator` / `reader`) se re-sincronizan a la matriz canónica de permisos al arrancar.
+Los roles de sistema se crean con una matriz default. `admin` siempre recupera todos los permisos al arrancar; `operator`/`reader` conservan personalizaciones hechas desde la UI.
 
 ### Despliegue con Docker
 

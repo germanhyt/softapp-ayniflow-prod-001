@@ -1,7 +1,16 @@
-const CACHE_NAME = 'ayniflow-shell-v1'
+const CACHE_NAME = 'ayniflow-shell-v2'
 const SHELL_ASSETS = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg', '/pwa-192.svg', '/pwa-512.svg']
 
-const API_PREFIXES = ['/auth', '/users', '/roles', '/finance', '/health', '/docs', '/openapi.json']
+const API_PREFIXES = [
+  '/auth',
+  '/users',
+  '/roles',
+  '/permissions',
+  '/finance',
+  '/health',
+  '/docs',
+  '/openapi.json',
+]
 
 function isApiRequest(url) {
   return API_PREFIXES.some((prefix) => url.pathname === prefix || url.pathname.startsWith(`${prefix}/`))
