@@ -44,6 +44,8 @@ class AuthService:
     ) -> User:
         if self.repository.get_user_by_username(username):
             raise AppException("El nombre de usuario ya existe", status_code=409)
+        if self.repository.get_user_by_email(email):
+            raise AppException("El email ya está registrado", status_code=409)
 
         try:
             return self.repository.create_user(

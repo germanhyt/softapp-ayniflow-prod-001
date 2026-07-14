@@ -10,6 +10,7 @@ from app.shared.exceptions import AppException
 def test_create_user_passes_role_slug_to_repository():
     repository = MagicMock()
     repository.get_user_by_username.return_value = None
+    repository.get_user_by_email.return_value = None
     expected_user = SimpleNamespace(id=10, username="mock-user")
     repository.create_user.return_value = expected_user
     service = AuthService(repository)

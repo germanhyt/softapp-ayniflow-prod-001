@@ -27,10 +27,13 @@ class AuthRepository:
     def list_users(self) -> list[User]:
         return (
             self.db.query(User)
-            .options(joinedload(User.roles))
+            .options(joinedload(User.roles).joinedload(Role.permissions))
             .order_by(User.id.asc())
             .all()
         )
+
+    def get_user_by_email(self, email: str) -> User | None:
+        return self.db.query(User).filter(User.email == email).first()
 
     def get_role_by_slug(self, slug: str) -> Role | None:
         return self.db.query(Role).filter(Role.slug == slug).first()
@@ -210,8 +213,8 @@ class AuthRepository:
 
         role.permissions = permissions
         self.db.commit()
-        self.db.refresh(role)
-        return role
+        reloaded = self.get_role_by_id(role.id)
+        return reloaded or role
 
     def commit(self) -> None:
         self.db.commit()

@@ -8,6 +8,7 @@ from app.modules.auth.infrastructure.repositories import AuthRepository
 from app.modules.auth.presentation.deps import (
     get_auth_service,
     get_current_user,
+    require_any_permission,
     require_permission,
     serialize_user,
 )
@@ -75,18 +76,21 @@ def update_user(
     payload: UpdateUserRequest,
     current_user: User = Depends(require_permission("users:write")),
     service: AuthService = Depends(get_auth_service),
+    db: Session = Depends(get_db),
 ):
     if current_user.id == user_id and payload.is_active is False:
         from app.shared.exceptions import AppException
 
         raise AppException("No puedes desactivar tu propio usuario", status_code=400)
 
-    updated = service.update_user(
+    service.update_user(
         user_id=user_id,
         full_name=payload.full_name,
         is_active=payload.is_active,
         role_slug=payload.role_slug,
     )
+    repository = AuthRepository(db)
+    updated = repository.get_user_by_id(user_id)
     return serialize_user(updated)
 
 
@@ -124,7 +128,7 @@ permissions_router = APIRouter(prefix="/permissions", tags=["permissions"])
 
 @roles_router.get("", response_model=list[RoleResponse])
 def list_roles(
-    _: User = Depends(require_permission("roles:read")),
+    _: User = Depends(require_any_permission("roles:read", "users:write")),
     db: Session = Depends(get_db),
 ):
     repository = AuthRepository(db)
