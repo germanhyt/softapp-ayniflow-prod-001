@@ -175,6 +175,11 @@ function UserForm({
       return
     }
 
+    if (!roles.length) {
+      setError('No hay roles disponibles. Verifica el permiso roles:read o vuelve a cargar.')
+      return
+    }
+
     const passwordErrorMessage = validateUserPassword(form.password, form.confirmPassword)
     if (passwordErrorMessage) {
       setError(passwordErrorMessage)
@@ -281,7 +286,10 @@ function UserForm({
             value={form.roleSlug}
             onChange={(e) => setForm({ ...form, roleSlug: e.target.value })}
             className="input-field"
+            required
+            disabled={!roles.length}
           >
+            {!roles.length && <option value="">Sin roles disponibles</option>}
             {roles.map((role) => (
               <option key={role.id} value={role.slug}>
                 {role.name}

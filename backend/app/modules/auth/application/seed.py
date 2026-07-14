@@ -16,8 +16,6 @@ PERMISSIONS = [
     ("integrations:gmail_connect", "Vincular y desvincular correo Gmail"),
 ]
 
-# Roles de sistema: sus permisos se re-sincronizan al arrancar con estos defaults.
-# Si personalizas un rol desde la UI y reinicias el backend, volverá a esta matriz.
 ROLES = {
     "admin": {
         "name": "Administrador",
@@ -45,6 +43,14 @@ ROLES = {
 
 
 def seed_auth_data() -> None:
+    """Seed estructural de auth.
+
+    - Siempre upsert de permisos catalogados.
+    - Roles nuevos: se crean con la matriz default.
+    - Roles existentes (operator/reader/custom): solo actualiza nombre/descripción.
+      No pisa permisos personalizados desde la UI.
+    - Admin existente: agrega permisos faltantes del catálogo (nunca se queda sin acceso).
+    """
     db = SessionLocal()
     try:
         repository = AuthRepository(db)
@@ -54,15 +60,21 @@ def seed_auth_data() -> None:
 
         repository.commit()
 
+        all_permission_codes = [code for code, _ in PERMISSIONS]
+
         for slug, data in ROLES.items():
-            role, _created = repository.ensure_role(
+            role, created = repository.ensure_role(
                 slug,
                 data["name"],
                 data["description"],
                 data["permissions"],
             )
-            # Matriz canónica de roles de sistema (admin / operator / reader).
-            repository.sync_role_permissions(role, data["permissions"])
+            if created:
+                continue
+
+            if slug == "admin":
+                # Solo agrega permisos nuevos del catálogo; no quita custom extras.
+                repository.add_permissions_to_role(role, all_permission_codes)
 
         repository.commit()
 

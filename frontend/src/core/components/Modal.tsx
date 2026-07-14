@@ -10,17 +10,34 @@ interface ModalProps {
   size?: 'md' | 'lg' | 'xl'
 }
 
+let openModalCount = 0
+const escapeStack: Array<() => void> = []
+
 export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
   useEffect(() => {
     if (!isOpen) return
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKeyDown)
+
+    openModalCount += 1
+    escapeStack.push(onClose)
     document.body.style.overflow = 'hidden'
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      const top = escapeStack[escapeStack.length - 1]
+      if (top !== onClose) return
+      event.preventDefault()
+      onClose()
+    }
+
+    document.addEventListener('keydown', onKeyDown)
     return () => {
       document.removeEventListener('keydown', onKeyDown)
-      document.body.style.overflow = ''
+      const index = escapeStack.lastIndexOf(onClose)
+      if (index >= 0) escapeStack.splice(index, 1)
+      openModalCount = Math.max(0, openModalCount - 1)
+      if (openModalCount === 0) {
+        document.body.style.overflow = ''
+      }
     }
   }, [isOpen, onClose])
 
