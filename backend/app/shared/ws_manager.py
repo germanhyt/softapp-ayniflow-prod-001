@@ -56,19 +56,41 @@ class FinanceWsManager:
             logger.debug("No se pudo enviar WS a user_id=%s: %s", client.user_id, exc)
             await self.disconnect(client)
 
-    async def broadcast_finance(self, payload: dict[str, Any]) -> None:
+    async def broadcast_finance(
+        self,
+        payload: dict[str, Any],
+        *,
+        workspace_id: int | None = None,
+    ) -> None:
+        """Envía el evento solo a clientes del mismo usuario (workspace_id = user.id)."""
+        if workspace_id is None:
+            logger.warning(
+                "Evento WS sin workspace_id omitido (type=%s)",
+                payload.get("type"),
+            )
+            return
+
         async with self._lock:
-            targets = [c for c in self._clients if "finance:read" in c.permissions]
+            targets = [
+                client
+                for client in self._clients
+                if "finance:read" in client.permissions and client.user_id == workspace_id
+            ]
 
         for client in targets:
             await self.send_json(client, payload)
 
-    def schedule_finance_event(self, payload: dict[str, Any]) -> None:
+    def schedule_finance_event(
+        self,
+        payload: dict[str, Any],
+        *,
+        workspace_id: int | None = None,
+    ) -> None:
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
             return
-        loop.create_task(self.broadcast_finance(payload))
+        loop.create_task(self.broadcast_finance(payload, workspace_id=workspace_id))
 
 
 finance_ws_manager = FinanceWsManager()

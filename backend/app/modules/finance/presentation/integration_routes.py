@@ -127,12 +127,15 @@ def export_pdf(
 def receive_webhook(
     payload: WebhookPayload,
     x_webhook_secret: str | None = Header(default=None, alias="X-Webhook-Secret"),
+    x_workspace_id: int | None = Header(default=None, alias="X-Workspace-Id"),
     db: Session = Depends(get_db),
 ):
     if settings.webhook_secret and x_webhook_secret != settings.webhook_secret:
         raise AppException("No autorizado", status_code=401)
 
-    repository = FinanceRepository(db)
+    # Webhook sin sesión: scope explícito (header) o admin (user.id=1) por defecto.
+    workspace_id = x_workspace_id if x_workspace_id is not None else 1
+    repository = FinanceRepository(db, workspace_id=workspace_id)
     IntegrationSettingsService(repository).require_enabled(
         "webhook_inbound",
         message="El webhook entrante está desactivado en configuración.",

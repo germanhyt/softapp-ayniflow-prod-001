@@ -77,10 +77,11 @@ def _authenticate_ws_token(token: str) -> tuple[int, set[str]] | None:
         db.close()
 
 
-def _load_transactions_preload(filters: dict[str, Any]) -> dict[str, Any]:
+def _load_transactions_preload(workspace_id: int, filters: dict[str, Any]) -> dict[str, Any]:
     db: Session = SessionLocal()
     try:
-        service = FinanceService(FinanceRepository(db))
+        # Misma regla que REST: workspace_id = user.id del cliente WS.
+        service = FinanceService(FinanceRepository(db, workspace_id=workspace_id))
         movement_raw = filters.get("movement_type")
         movement = MovementType(movement_raw) if movement_raw else None
         result = service.list_transactions_paginated(
@@ -98,7 +99,7 @@ def _load_transactions_preload(filters: dict[str, Any]) -> dict[str, Any]:
 
 async def _send_transactions_preload(client: FinanceWsClient, raw_filters: dict[str, Any] | None) -> None:
     filters = _normalize_filters(raw_filters)
-    data = _load_transactions_preload(filters)
+    data = _load_transactions_preload(client.user_id, filters)
     await finance_ws_manager.send_json(
         client,
         {

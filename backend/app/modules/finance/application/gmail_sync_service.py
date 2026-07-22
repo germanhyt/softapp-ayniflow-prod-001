@@ -124,8 +124,13 @@ class GmailSyncService:
 
                 result_tx = FinanceService.serialize_transaction(transaction)
                 if mode == "realtime":
-                    notify_transactions_changed("created", transaction_id=transaction.id, transaction=result_tx)
-                    notify_webhook_events_changed()
+                    notify_transactions_changed(
+                        "created",
+                        workspace_id=self.repository.workspace_id,
+                        transaction_id=transaction.id,
+                        transaction=result_tx,
+                    )
+                    notify_webhook_events_changed(workspace_id=self.repository.workspace_id)
 
                 self._record_processed(message_id, operation_number, transaction.id, mode)
                 created += 1
@@ -139,8 +144,8 @@ class GmailSyncService:
 
         if created:
             if mode != "realtime":
-                notify_transactions_changed("bulk")
-            notify_finance_invalidate("summary")
+                notify_transactions_changed("bulk", workspace_id=self.repository.workspace_id)
+            notify_finance_invalidate("summary", workspace_id=self.repository.workspace_id)
 
         return {
             "created": created,

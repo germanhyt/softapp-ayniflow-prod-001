@@ -32,8 +32,8 @@ class IntegrationService:
             created += 1
 
         if created:
-            notify_transactions_changed("bulk")
-            notify_finance_invalidate("transactions")
+            notify_transactions_changed("bulk", workspace_id=self.repository.workspace_id)
+            notify_finance_invalidate("transactions", workspace_id=self.repository.workspace_id)
         return {"created": created, "skipped": skipped, "total": len(rows)}
 
     def import_mapped_rows(self, mapped_rows: list[dict[str, Any]]) -> dict[str, int]:
@@ -49,8 +49,8 @@ class IntegrationService:
             created += 1
 
         if created:
-            notify_transactions_changed("bulk")
-            notify_finance_invalidate("transactions")
+            notify_transactions_changed("bulk", workspace_id=self.repository.workspace_id)
+            notify_finance_invalidate("transactions", workspace_id=self.repository.workspace_id)
         return {"created": created, "skipped": skipped, "total": len(mapped_rows)}
 
     def process_webhook(self, payload: dict[str, Any], source: str = "n8n") -> dict[str, Any]:
@@ -91,9 +91,14 @@ class IntegrationService:
         )
 
         result_tx = FinanceService.serialize_transaction(transaction)
-        notify_transactions_changed("created", transaction_id=transaction.id, transaction=result_tx)
-        notify_webhook_events_changed()
-        notify_finance_invalidate("summary")
+        notify_transactions_changed(
+            "created",
+            workspace_id=self.repository.workspace_id,
+            transaction_id=transaction.id,
+            transaction=result_tx,
+        )
+        notify_webhook_events_changed(workspace_id=self.repository.workspace_id)
+        notify_finance_invalidate("summary", workspace_id=self.repository.workspace_id)
 
         return {
             "event_id": event.id,

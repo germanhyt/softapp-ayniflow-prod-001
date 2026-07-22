@@ -124,7 +124,7 @@ class NotificationService:
         )
         created = self.repository.create_notification(notification)
         if created:
-            notify_notifications_changed()
+            notify_notifications_changed(workspace_id=self.repository.workspace_id)
         return created
 
     def _forward_to_n8n(self, payload: dict[str, Any]) -> None:

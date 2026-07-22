@@ -41,8 +41,8 @@ async def run_gmail_poll_loop() -> None:
         try:
             db = SessionLocal()
             try:
-                repository = FinanceRepository(db)
-                settings_service = IntegrationSettingsService(repository)
+                settings_repo = FinanceRepository(db)
+                settings_service = IntegrationSettingsService(settings_repo)
                 _poll_runtime_state["last_checked_at"] = serialize_datetime(now_app())
                 _poll_runtime_state["last_error"] = None
                 if not settings_service.is_enabled("gmail_realtime"):
@@ -51,26 +51,42 @@ async def run_gmail_poll_loop() -> None:
                         "reason": "gmail_realtime_disabled",
                     }
                     continue
-                if not GmailClient.is_configured(repository.get_gmail_refresh_token()):
+
+                credentials = settings_repo.list_gmail_credentials()
+                if not credentials and not settings.gmail_refresh_token:
                     _poll_runtime_state["last_result"] = {
                         "status": "skipped",
                         "reason": "gmail_not_configured",
                     }
                     continue
-                result = GmailSyncService(repository).poll_new()
-                _poll_runtime_state["last_result"] = {
-                    "status": "ok",
-                    "created": result["created"],
-                    "skipped": result["skipped"],
-                    "invalid": result["invalid"],
-                    "total": result["total"],
-                }
-                if result["created"] > 0:
+
+                totals = {"created": 0, "skipped": 0, "invalid": 0, "total": 0, "workspaces": 0}
+                # Poll por cada cuenta vinculada, escribiendo en su workspace_id.
+                targets: list[tuple[int | None, object]] = [
+                    (cred.workspace_id, cred) for cred in credentials
+                ]
+                if settings.gmail_refresh_token and not credentials:
+                    targets = [(1, None)]
+
+                for workspace_id, _cred in targets:
+                    scoped = FinanceRepository(db, workspace_id=workspace_id or 1)
+                    if not GmailClient.is_configured(scoped.get_gmail_refresh_token()):
+                        continue
+                    result = GmailSyncService(scoped).poll_new()
+                    totals["created"] += result["created"]
+                    totals["skipped"] += result["skipped"]
+                    totals["invalid"] += result["invalid"]
+                    totals["total"] += result["total"]
+                    totals["workspaces"] += 1
+
+                _poll_runtime_state["last_result"] = {"status": "ok", **totals}
+                if totals["created"] > 0:
                     logger.info(
-                        "Gmail poll: %s creadas, %s omitidas, %s inválidas",
-                        result["created"],
-                        result["skipped"],
-                        result["invalid"],
+                        "Gmail poll: %s creadas, %s omitidas, %s inválidas (%s workspaces)",
+                        totals["created"],
+                        totals["skipped"],
+                        totals["invalid"],
+                        totals["workspaces"],
                     )
             finally:
                 db.close()
@@ -78,14 +94,7 @@ async def run_gmail_poll_loop() -> None:
             _poll_runtime_state["last_checked_at"] = serialize_datetime(now_app())
             err_str = str(exc)
             if "invalid_grant" in err_str.lower():
-                try:
-                    db = SessionLocal()
-                    try:
-                        FinanceRepository(db).delete_gmail_credential()
-                    finally:
-                        db.close()
-                except Exception as cleanup_exc:
-                    logger.warning("No se pudo limpiar credencial Gmail inválida: %s", cleanup_exc)
+                # No borrar todas las credenciales: el fallo puede ser de una sola cuenta.
                 _poll_runtime_state["last_error"] = (
                     "Token Gmail expirado o revocado. Reconecta Gmail en Integraciones."
                 )

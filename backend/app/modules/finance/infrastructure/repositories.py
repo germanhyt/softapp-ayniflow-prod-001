@@ -444,6 +444,15 @@ class FinanceRepository:
             query = query.filter(FinanceGmailCredential.workspace_id == self.workspace_id)
         return query.order_by(FinanceGmailCredential.id.desc()).first()
 
+    def list_gmail_credentials(self) -> list:
+        """Lista credenciales Gmail. Sin scope: todas (solo para el poller)."""
+        from app.modules.finance.domain.models import FinanceGmailCredential
+
+        query = self.db.query(FinanceGmailCredential)
+        if self.workspace_id is not None:
+            query = query.filter(FinanceGmailCredential.workspace_id == self.workspace_id)
+        return query.order_by(FinanceGmailCredential.id.asc()).all()
+
     def get_gmail_refresh_token(self) -> str | None:
         if settings.gmail_refresh_token:
             return settings.gmail_refresh_token

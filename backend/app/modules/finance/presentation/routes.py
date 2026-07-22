@@ -94,7 +94,12 @@ def create_transaction(
     )
     link_service.apply_links(transaction)
     result = serialize_transaction(transaction)
-    notify_transactions_changed("created", transaction_id=transaction.id, transaction=result)
+    notify_transactions_changed(
+        "created",
+        workspace_id=repository.workspace_id,
+        transaction_id=transaction.id,
+        transaction=result,
+    )
     return result
 
 
@@ -128,7 +133,12 @@ def update_transaction(
     updated = repository.update_transaction(transaction, data)
     link_service.apply_links(updated)
     result = serialize_transaction(updated)
-    notify_transactions_changed("updated", transaction_id=updated.id, transaction=result)
+    notify_transactions_changed(
+        "updated",
+        workspace_id=repository.workspace_id,
+        transaction_id=updated.id,
+        transaction=result,
+    )
     return result
 
 
@@ -143,7 +153,11 @@ def delete_transaction(
     transaction = service.ensure_transaction(transaction_id)
     link_service.reverse_links(transaction)
     repository.delete_transaction(transaction)
-    notify_transactions_changed("deleted", transaction_id=transaction_id)
+    notify_transactions_changed(
+        "deleted",
+        workspace_id=repository.workspace_id,
+        transaction_id=transaction_id,
+    )
 
 
 @router.patch("/transactions/bulk/category", response_model=TransactionBulkResult)
@@ -154,7 +168,7 @@ def bulk_update_transaction_category(
 ):
     updated = repository.bulk_update_transaction_category(payload.ids, payload.category)
     if updated:
-        notify_transactions_changed("bulk")
+        notify_transactions_changed("bulk", workspace_id=repository.workspace_id)
     return TransactionBulkResult(updated=updated, deleted=0, total=len(payload.ids))
 
 
@@ -173,7 +187,7 @@ def bulk_delete_transactions(
         repository.delete_transaction(transaction)
         deleted += 1
     if deleted:
-        notify_transactions_changed("bulk")
+        notify_transactions_changed("bulk", workspace_id=repository.workspace_id)
     return TransactionBulkResult(updated=0, deleted=deleted, total=len(payload.ids))
 
 
