@@ -1,9 +1,12 @@
-import { ArrowLeftRight, FileSpreadsheet, FileText, Wallet } from 'lucide-react'
+import { ArrowLeftRight, BarChart3, FileSpreadsheet, FileText, Wallet } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { CategoryChip } from '../../../core/components/CategoryChip'
+import { FilterField, FilterPanel } from '../../../core/components/FilterField'
+import { ChartSkeleton } from '../../../core/components/skeleton/ChartSkeleton'
 import { HealthBadge } from '../../../core/components/HealthBadge'
+import { PageHeader } from '../../../core/components/PageHeader'
 import { ProgressBar } from '../../../core/components/ProgressBar'
 import { StatSummary } from '../../../core/components/StatSummary'
 import { ensureArray } from '../../../core/utils/collections'
@@ -70,41 +73,40 @@ export function FinanceOverviewPage() {
   const balance = Number(summary?.balance ?? 0)
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">Análisis financiero</h2>
-          <p className="text-sm text-muted">
-            Resumen visual del mes: balance, salud de presupuestos y hábitos de gasto.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {canWrite && (
-            <Link to="/finance/transactions" className="btn-primary inline-flex items-center gap-2">
-              <ArrowLeftRight size={16} />
-              Gestionar transacciones
-            </Link>
-          )}
-          <button
-            type="button"
-            onClick={() => exportExcel(filters)}
-            className="btn-secondary inline-flex items-center gap-2"
-          >
-            <FileSpreadsheet size={16} />
-            Excel
-          </button>
-          <button
-            type="button"
-            onClick={() => exportPdf(filters)}
-            className="btn-secondary inline-flex items-center gap-2"
-          >
-            <FileText size={16} />
-            PDF
-          </button>
-        </div>
-      </div>
+    <div className="module-page">
+      <PageHeader
+        title="Análisis financiero"
+        description="Resumen visual del mes: balance, salud de presupuestos y hábitos de gasto."
+        icon={BarChart3}
+        actions={
+          <>
+            {canWrite && (
+              <Link to="/finance/transactions" className="btn-primary inline-flex items-center gap-2">
+                <ArrowLeftRight size={16} />
+                Gestionar transacciones
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={() => exportExcel(filters)}
+              className="btn-secondary inline-flex items-center gap-2"
+            >
+              <FileSpreadsheet size={16} />
+              Excel
+            </button>
+            <button
+              type="button"
+              onClick={() => exportPdf(filters)}
+              className="btn-secondary inline-flex items-center gap-2"
+            >
+              <FileText size={16} />
+              PDF
+            </button>
+          </>
+        }
+      />
 
-      <section className="card grid gap-4 md:grid-cols-4">
+      <FilterPanel columns={4}>
         <FilterField label="Desde">
           <input
             type="date"
@@ -148,7 +150,7 @@ export function FinanceOverviewPage() {
             className="input-field"
           />
         </FilterField>
-      </section>
+      </FilterPanel>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatSummary
@@ -244,11 +246,19 @@ export function FinanceOverviewPage() {
       <section className="grid gap-4 xl:grid-cols-2">
         <div className="chart-panel">
           <h3 className="mb-3 font-medium">Balance por día</h3>
-          <BalanceByDayChart data={summary?.daily_balances ?? []} />
+          {summaryLoading ? (
+            <ChartSkeleton height={280} variant="line" />
+          ) : (
+            <BalanceByDayChart data={summary?.daily_balances ?? []} />
+          )}
         </div>
         <div className="chart-panel">
           <h3 className="mb-3 font-medium">Distribución por tipo de pago</h3>
-          <PaymentTypePieChart data={summary?.by_payment_type ?? []} />
+          {summaryLoading ? (
+            <ChartSkeleton height={240} variant="pie" />
+          ) : (
+            <PaymentTypePieChart data={summary?.by_payment_type ?? []} />
+          )}
         </div>
         <div className="chart-panel xl:col-span-2">
           <h3 className="mb-3 font-medium">Distribución por categoría</h3>
@@ -284,7 +294,11 @@ export function FinanceOverviewPage() {
         </div>
         <div className="chart-panel xl:col-span-2">
           <h3 className="mb-3 font-medium">Tendencia por hora (ingresos vs egresos)</h3>
-          <HourlyTrendChart transactions={transactions} />
+          {summaryLoading ? (
+            <ChartSkeleton height={280} variant="bar" />
+          ) : (
+            <HourlyTrendChart transactions={transactions} />
+          )}
         </div>
       </section>
 
@@ -389,11 +403,3 @@ function MovementBadge({ type }: { type: string }) {
   )
 }
 
-function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block space-y-1 text-sm">
-      <span className="font-medium">{label}</span>
-      {children}
-    </label>
-  )
-}

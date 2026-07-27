@@ -1,7 +1,9 @@
 import { Pencil, PiggyBank, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
+import { FilterField, FilterPanel } from '../../../core/components/FilterField'
 import { HealthBadge } from '../../../core/components/HealthBadge'
+import { PageHeader } from '../../../core/components/PageHeader'
 import { PaginationControls } from '../../../core/components/PaginationControls'
 import { ProgressBar } from '../../../core/components/ProgressBar'
 import { StatSummary } from '../../../core/components/StatSummary'
@@ -84,19 +86,20 @@ export function SavingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">Ahorros</h2>
-          <p className="text-sm text-muted">Metas con avance visual — cuánto falta para cada objetivo.</p>
-        </div>
-        {canWrite && (
-          <button type="button" onClick={openCreate} className="btn-primary inline-flex items-center gap-2">
-            <Plus size={16} />
-            Nueva meta
-          </button>
-        )}
-      </div>
+    <div className="module-page">
+      <PageHeader
+        title="Ahorros"
+        description="Metas con avance visual — cuánto falta para cada objetivo."
+        icon={PiggyBank}
+        actions={
+          canWrite ? (
+            <button type="button" onClick={openCreate} className="btn-primary inline-flex items-center gap-2">
+              <Plus size={16} />
+              Nueva meta
+            </button>
+          ) : undefined
+        }
+      />
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatSummary label="Metas" value={String(summary?.goals_count ?? 0)} />
@@ -122,7 +125,7 @@ export function SavingsPage() {
         />
       </section>
 
-      <section className="card grid gap-4 md:grid-cols-2">
+      <FilterPanel columns={2}>
         <FilterField label="Buscar meta">
           <input
             type="text"
@@ -143,7 +146,7 @@ export function SavingsPage() {
             <option value="completed">Completadas (≥100%)</option>
           </select>
         </FilterField>
-      </section>
+      </FilterPanel>
 
       <div className="space-y-3 lg:hidden">
         {isLoading ? (
@@ -382,11 +385,3 @@ function EmptySavings({ canWrite, onCreate }: { canWrite: boolean; onCreate: () 
   )
 }
 
-function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block space-y-1 text-sm">
-      <span className="font-medium">{label}</span>
-      {children}
-    </label>
-  )
-}

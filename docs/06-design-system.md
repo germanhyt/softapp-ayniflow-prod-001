@@ -60,6 +60,9 @@ Labels de stat: `.stat-summary__label` (uppercase, tracking-wide).
 | `HealthBadge` | `label`, `tone` | ok / riesgo / movimiento |
 | `CategoryChip` | `name`, `color` | Identidad de categoría |
 | `BrandLogo` / `BrandIcon` | — | Marca animada |
+| `PageHeader` | `title`, `description?`, `icon?`, `badge?`, `actions?` | Encabezado de módulo |
+| `FilterField` / `FilterPanel` | labels + grid | Filtros de listado |
+| `SegmentTabs` | opciones pill | Tabs Debo/Me deben, presets de periodo |
 | `Modal`, `ThemeToggle`, `PaginationControls` | — | Shell compartido |
 
 ### Utilidades de dominio

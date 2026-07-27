@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { ShieldAlert } from 'lucide-react'
+import { Plug, ShieldAlert } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 
 import { HealthBadge } from '../../../core/components/HealthBadge'
+import { PageHeader } from '../../../core/components/PageHeader'
 import { ProgressBar } from '../../../core/components/ProgressBar'
 import { StatSummary } from '../../../core/components/StatSummary'
 import { ToggleSwitch } from '../../../core/components/ToggleSwitch'
@@ -370,15 +371,16 @@ export function IntegrationsPage() {
   const configPct = totalCount > 0 ? Math.round((configuredCount / totalCount) * 100) : 0
 
   return (
-    <div className="integrations-page space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold tracking-tight">Integraciones</h2>
-        <p className="text-sm text-muted">
-          {canWrite
+    <div className="integrations-page module-page">
+      <PageHeader
+        title="Integraciones"
+        description={
+          canWrite
             ? 'Activa funciones y ajusta parámetros operativos. Los toggles se guardan al instante; los campos de texto al salir del input.'
-            : 'Puedes vincular tu correo Gmail. La configuración avanzada la gestiona un administrador.'}
-        </p>
-      </div>
+            : 'Puedes vincular tu correo Gmail. La configuración avanzada la gestiona un administrador.'
+        }
+        icon={Plug}
+      />
 
       {canWrite && status && (
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

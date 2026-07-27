@@ -18,8 +18,10 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { HealthBadge } from '../../../core/components/HealthBadge'
+import { PageHeader } from '../../../core/components/PageHeader'
 import { ProgressBar } from '../../../core/components/ProgressBar'
 import { StatSummary } from '../../../core/components/StatSummary'
+import { ChartSkeleton } from '../../../core/components/skeleton/ChartSkeleton'
 import { ensureArray } from '../../../core/utils/collections'
 import {
   formatCurrency,
@@ -137,25 +139,25 @@ export function DashboardPage() {
   })()
 
   return (
-    <div className="space-y-6">
-      <section className="card overflow-hidden">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="mb-1 flex items-center gap-2">
-              <LayoutDashboard size={22} className="text-premium-primary" />
-              <h2 className="text-xl font-semibold">Dashboard</h2>
-            </div>
-            <p className="text-sm text-muted">
-              {greeting}, <strong>{user?.username}</strong>. Vista ejecutiva del mes en curso.
-            </p>
-          </div>
+    <div className="module-page">
+      <PageHeader
+        title="Dashboard"
+        description={
+          <>
+            {greeting}, <strong>{user?.username}</strong>. Vista ejecutiva del mes en curso.
+          </>
+        }
+        icon={LayoutDashboard}
+        badge={
           <span className="badge inline-flex items-center gap-1.5">
             <CalendarRange size={14} />
             {monthFilters.from} → {monthFilters.to}
           </span>
-        </div>
+        }
+      />
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="card">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <StatSummary label="Usuario" value={user?.username ?? '—'} />
           <StatSummary
             label="Roles"
@@ -266,9 +268,7 @@ export function DashboardPage() {
                 </Link>
               </div>
               {summaryLoading ? (
-                <div className="flex h-[240px] items-center justify-center text-sm text-muted">
-                  Cargando…
-                </div>
+                <ChartSkeleton height={240} variant="pie" />
               ) : (
                 <PaymentTypePieChart data={summary?.by_payment_type ?? []} height={240} />
               )}
@@ -281,9 +281,7 @@ export function DashboardPage() {
                 </Link>
               </div>
               {summaryLoading ? (
-                <div className="flex h-[240px] items-center justify-center text-sm text-muted">
-                  Cargando…
-                </div>
+                <ChartSkeleton height={240} variant="pie" />
               ) : (
                 <CategoryPieChart data={summary?.by_category ?? []} height={240} />
               )}
@@ -300,9 +298,7 @@ export function DashboardPage() {
                 </Link>
               </div>
               {summaryLoading ? (
-                <div className="flex h-[300px] items-center justify-center text-sm text-muted">
-                  Cargando gráfico…
-                </div>
+                <ChartSkeleton height={300} variant="line" />
               ) : (
                 <BalanceByDayChart data={summary?.daily_balances ?? []} />
               )}

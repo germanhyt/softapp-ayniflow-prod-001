@@ -2,6 +2,7 @@ import { Pencil, Plus, Shield, Trash2, Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { HealthBadge } from '../../../core/components/HealthBadge'
+import { PageHeader } from '../../../core/components/PageHeader'
 import { StatSummary } from '../../../core/components/StatSummary'
 import { ensureArray } from '../../../core/utils/collections'
 import { alertError, alertSuccess, confirmAction } from '../../../core/utils/alerts'
@@ -75,38 +76,36 @@ export function UsersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">Usuarios</h2>
-          <p className="text-sm text-muted">
-            Cada cuenta tiene un único rol. Los permisos efectivos dependen del rol asignado.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap justify-end gap-2">
-          {canViewRoles && (
-            <button
-              type="button"
-              onClick={() => setRolesModalOpen(true)}
-              className="btn-secondary inline-flex items-center gap-2"
-            >
-              <Shield size={16} />
-              {canEditRoles ? 'Editar roles' : 'Ver roles'}
-            </button>
-          )}
-          {canManage && (
-            <button
-              type="button"
-              onClick={() => setCreateModalOpen(true)}
-              className="btn-primary inline-flex items-center gap-2"
-            >
-              <Plus size={16} />
-              Nuevo usuario
-            </button>
-          )}
-        </div>
-      </div>
+    <div className="module-page">
+      <PageHeader
+        title="Usuarios"
+        description="Cada cuenta tiene un único rol. Los permisos efectivos dependen del rol asignado."
+        icon={Users}
+        actions={
+          <>
+            {canViewRoles && (
+              <button
+                type="button"
+                onClick={() => setRolesModalOpen(true)}
+                className="btn-secondary inline-flex items-center gap-2"
+              >
+                <Shield size={16} />
+                {canEditRoles ? 'Editar roles' : 'Ver roles'}
+              </button>
+            )}
+            {canManage && (
+              <button
+                type="button"
+                onClick={() => setCreateModalOpen(true)}
+                className="btn-primary inline-flex items-center gap-2"
+              >
+                <Plus size={16} />
+                Nuevo usuario
+              </button>
+            )}
+          </>
+        }
+      />
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatSummary label="Total usuarios" value={String(stats.total)} />

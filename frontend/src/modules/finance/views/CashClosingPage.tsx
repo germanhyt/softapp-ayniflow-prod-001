@@ -11,6 +11,9 @@ import {
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { FilterField, FilterPanel } from '../../../core/components/FilterField'
+import { PageHeader } from '../../../core/components/PageHeader'
+import { SegmentTabs } from '../../../core/components/SegmentTabs'
 import { ProgressBar } from '../../../core/components/ProgressBar'
 import { StatSummary } from '../../../core/components/StatSummary'
 import { useCashClosing, useExportReports } from '../application/hooks/useFinance'
@@ -84,54 +87,49 @@ export function CashClosingPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="mb-1 flex items-center gap-2">
-            <Calculator size={22} className="text-premium-primary" />
-            <h2 className="text-xl font-semibold tracking-tight">Cierre de caja</h2>
-          </div>
-          <p className="text-sm text-muted">
-            Cuadre del periodo: ingresos, egresos y resultado de un vistazo.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => exportExcel(filters)}
-            disabled={invalidRange || !data}
-            className="btn-secondary inline-flex items-center gap-2"
-          >
-            <FileSpreadsheet size={16} />
-            Excel
-          </button>
-          <button
-            type="button"
-            onClick={() => exportPdf(filters)}
-            disabled={invalidRange || !data}
-            className="btn-secondary inline-flex items-center gap-2"
-          >
-            <FileText size={16} />
-            PDF
-          </button>
-        </div>
-      </div>
+    <div className="module-page">
+      <PageHeader
+        title="Cierre de caja"
+        description="Cuadre del periodo: ingresos, egresos y resultado de un vistazo."
+        icon={Calculator}
+        badge={
+          <span className="badge inline-flex items-center gap-1.5">
+            <CalendarRange size={14} />
+            {periodLabel}
+          </span>
+        }
+        actions={
+          <>
+            <button
+              type="button"
+              onClick={() => exportExcel(filters)}
+              disabled={invalidRange || !data}
+              className="btn-secondary inline-flex items-center gap-2"
+            >
+              <FileSpreadsheet size={16} />
+              Excel
+            </button>
+            <button
+              type="button"
+              onClick={() => exportPdf(filters)}
+              disabled={invalidRange || !data}
+              className="btn-secondary inline-flex items-center gap-2"
+            >
+              <FileText size={16} />
+              PDF
+            </button>
+          </>
+        }
+      />
 
       <section className="card space-y-4">
-        <div className="flex flex-wrap gap-2">
-          {PRESETS.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              onClick={() => applyPreset(preset.id)}
-              className={activePreset === preset.id ? 'btn-primary' : 'btn-secondary'}
-            >
-              {preset.label}
-            </button>
-          ))}
-        </div>
+        <SegmentTabs
+          options={PRESETS.map((preset) => ({ value: preset.id, label: preset.label }))}
+          value={activePreset}
+          onChange={(value) => applyPreset(value as PeriodPreset)}
+        />
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <FilterPanel columns={2} className="!border-0 !bg-transparent !p-0">
           <FilterField label="Desde" icon={<CalendarRange size={16} />}>
             <input
               type="date"
@@ -148,7 +146,7 @@ export function CashClosingPage() {
               className="input-field"
             />
           </FilterField>
-        </div>
+        </FilterPanel>
 
         {invalidRange && (
           <p className="alert-error rounded-lg px-3 py-2 text-sm">
@@ -323,22 +321,3 @@ export function CashClosingPage() {
   )
 }
 
-function FilterField({
-  label,
-  icon,
-  children,
-}: {
-  label: string
-  icon?: React.ReactNode
-  children: React.ReactNode
-}) {
-  return (
-    <label className="block space-y-1 text-sm">
-      <span className="flex items-center gap-1.5 font-medium">
-        {icon}
-        {label}
-      </span>
-      {children}
-    </label>
-  )
-}

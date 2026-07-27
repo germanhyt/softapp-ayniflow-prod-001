@@ -1,7 +1,10 @@
 import { HandCoins, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
+import { FilterField, FilterPanel } from '../../../core/components/FilterField'
 import { HealthBadge } from '../../../core/components/HealthBadge'
+import { PageHeader } from '../../../core/components/PageHeader'
+import { SegmentTabs } from '../../../core/components/SegmentTabs'
 import { PaginationControls } from '../../../core/components/PaginationControls'
 import { ProgressBar } from '../../../core/components/ProgressBar'
 import { StatSummary } from '../../../core/components/StatSummary'
@@ -120,21 +123,20 @@ export function LoansPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">Préstamos y cobranzas</h2>
-          <p className="text-sm text-muted">
-            Deudas y cobros con avance de pago a la vista.
-          </p>
-        </div>
-        {canWrite && (
-          <button type="button" onClick={openCreate} className="btn-primary inline-flex items-center gap-2">
-            <Plus size={16} />
-            Nuevo registro
-          </button>
-        )}
-      </div>
+    <div className="module-page">
+      <PageHeader
+        title="Préstamos y cobranzas"
+        description="Deudas y cobros con avance de pago a la vista."
+        icon={HandCoins}
+        actions={
+          canWrite ? (
+            <button type="button" onClick={openCreate} className="btn-primary inline-flex items-center gap-2">
+              <Plus size={16} />
+              Nuevo registro
+            </button>
+          ) : undefined
+        }
+      />
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatSummary label="Total registros" value={String(summary?.loans_count ?? 0)} />
@@ -155,23 +157,16 @@ export function LoansPage() {
         />
       </section>
 
-      <div className="flex flex-wrap gap-2">
-        {TAB_OPTIONS.map((tab) => (
-          <button
-            key={tab.value || 'all'}
-            type="button"
-            onClick={() => {
-              setTypeTab(tab.value)
-              setPage(1)
-            }}
-            className={typeTab === tab.value ? 'btn-primary' : 'btn-secondary'}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <SegmentTabs
+        options={TAB_OPTIONS}
+        value={typeTab}
+        onChange={(value) => {
+          setTypeTab(value)
+          setPage(1)
+        }}
+      />
 
-      <section className="card grid gap-4 md:grid-cols-2">
+      <FilterPanel columns={2}>
         <FilterField label="Buscar contraparte">
           <input
             type="text"
@@ -194,7 +189,7 @@ export function LoansPage() {
             ))}
           </select>
         </FilterField>
-      </section>
+      </FilterPanel>
 
       <div className="space-y-3 lg:hidden">
         {isLoading ? (
@@ -458,11 +453,3 @@ function EmptyLoans({ canWrite, onCreate }: { canWrite: boolean; onCreate: () =>
   )
 }
 
-function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block space-y-1 text-sm">
-      <span className="font-medium">{label}</span>
-      {children}
-    </label>
-  )
-}

@@ -447,6 +447,104 @@ body {
     @apply flex-1 p-4 lg:p-6;
   }
 
+  .page-header {
+    @apply flex flex-wrap items-start justify-between gap-4;
+  }
+
+  .page-header__main {
+    @apply min-w-0 flex-1;
+  }
+
+  .page-header__title-row {
+    @apply mb-1 flex flex-wrap items-center gap-2;
+  }
+
+  .page-header__icon {
+    color: var(--premium-primary);
+  }
+
+  .page-header__title {
+    @apply text-xl font-semibold tracking-tight;
+  }
+
+  .page-header__description {
+    @apply text-sm;
+    color: var(--premium-text-muted);
+  }
+
+  .page-header__actions {
+    @apply flex flex-wrap justify-end gap-2;
+  }
+
+  .filter-panel {
+    @apply rounded-xl p-4;
+    background-color: var(--premium-surface);
+    border: 1px solid var(--premium-border);
+  }
+
+  .filter-field {
+    @apply block space-y-1 text-sm;
+  }
+
+  .filter-field__label {
+    @apply inline-flex items-center gap-1.5 font-medium;
+  }
+
+  .filter-field__icon {
+    color: var(--premium-text-muted);
+  }
+
+  .segment-tabs {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .segment-tab {
+    @apply rounded-lg px-3 py-2 text-sm font-medium transition-colors;
+    color: var(--premium-text-muted);
+    background-color: var(--premium-surface);
+    border: 1px solid var(--premium-border);
+  }
+
+  .segment-tab:hover {
+    background-color: var(--premium-surface-high);
+    color: var(--premium-text);
+  }
+
+  .segment-tab--active {
+    background-color: rgba(var(--premium-primary-rgb), 0.16);
+    border-color: rgba(var(--premium-primary-rgb), 0.35);
+    color: var(--premium-primary);
+  }
+
+  .chart-skeleton {
+    @apply flex flex-col justify-end gap-4;
+  }
+
+  .chart-skeleton__bars {
+    @apply flex flex-1 items-end justify-between gap-2 px-2;
+  }
+
+  .chart-skeleton__bar {
+    @apply w-full max-w-8 rounded-t-md;
+    min-height: 2rem;
+  }
+
+  .chart-skeleton__pie {
+    @apply flex flex-1 items-center justify-center;
+  }
+
+  .chart-skeleton__ring {
+    @apply h-36 w-36 rounded-full;
+  }
+
+  .chart-skeleton__legend {
+    @apply flex flex-wrap justify-center gap-3;
+  }
+
+  .module-page {
+    @apply space-y-6;
+  }
+
   .chart-panel {
     @apply rounded-xl p-4;
     background-color: var(--premium-surface);

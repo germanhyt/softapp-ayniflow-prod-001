@@ -2,7 +2,9 @@ import { Pencil, Plus, Trash2, Wallet } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { CategoryChip } from '../../../core/components/CategoryChip'
+import { FilterField, FilterPanel } from '../../../core/components/FilterField'
 import { HealthBadge } from '../../../core/components/HealthBadge'
+import { PageHeader } from '../../../core/components/PageHeader'
 import { PaginationControls } from '../../../core/components/PaginationControls'
 import { ProgressBar } from '../../../core/components/ProgressBar'
 import { StatSummary } from '../../../core/components/StatSummary'
@@ -91,21 +93,20 @@ export function BudgetsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">Presupuestos</h2>
-          <p className="text-sm text-muted">
-            Vista clara de lo planificado versus lo gastado, por categoría.
-          </p>
-        </div>
-        {canWrite && (
-          <button type="button" onClick={openCreate} className="btn-primary inline-flex items-center gap-2">
-            <Plus size={16} />
-            Nuevo presupuesto
-          </button>
-        )}
-      </div>
+    <div className="module-page">
+      <PageHeader
+        title="Presupuestos"
+        description="Vista clara de lo planificado versus lo gastado, por categoría."
+        icon={Wallet}
+        actions={
+          canWrite ? (
+            <button type="button" onClick={openCreate} className="btn-primary inline-flex items-center gap-2">
+              <Plus size={16} />
+              Nuevo presupuesto
+            </button>
+          ) : undefined
+        }
+      />
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatSummary
@@ -138,7 +139,7 @@ export function BudgetsPage() {
         />
       </section>
 
-      <section className="card grid gap-4 md:grid-cols-3">
+      <FilterPanel columns={3}>
         <FilterField label="Mes">
           <input
             type="month"
@@ -173,7 +174,7 @@ export function BudgetsPage() {
             <option value="exceeded">Excedidos (≥100%)</option>
           </select>
         </FilterField>
-      </section>
+      </FilterPanel>
 
       {/* Mobile / tablet: cards estilo Spendee */}
       <div className="space-y-3 lg:hidden">
@@ -415,11 +416,3 @@ function EmptyBudgets({ canWrite, onCreate }: { canWrite: boolean; onCreate: () 
   )
 }
 
-function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block space-y-1 text-sm">
-      <span className="font-medium">{label}</span>
-      {children}
-    </label>
-  )
-}

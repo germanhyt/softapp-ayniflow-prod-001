@@ -3,7 +3,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import { CategoryChip } from '../../../core/components/CategoryChip'
+import { FilterField, FilterPanel } from '../../../core/components/FilterField'
 import { HealthBadge } from '../../../core/components/HealthBadge'
+import { PageHeader } from '../../../core/components/PageHeader'
 import { PaginationControls } from '../../../core/components/PaginationControls'
 import { hasPermission, useCurrentUser } from '../../auth/application/hooks/useAuth'
 import { alertSuccess, confirmAction } from '../../../core/utils/alerts'
@@ -167,17 +169,13 @@ export function TransactionsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">Transacciones</h2>
-          <p className="text-sm text-muted">
-            Movimientos del día a día, con categoría y tipo a la vista.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap justify-end gap-2">
-          {canWrite && (
+    <div className="module-page">
+      <PageHeader
+        title="Transacciones"
+        description="Movimientos del día a día, con categoría y tipo a la vista."
+        icon={ArrowLeftRight}
+        actions={
+          canWrite ? (
             <>
               <button
                 type="button"
@@ -212,11 +210,11 @@ export function TransactionsPage() {
                 Nueva transacción
               </button>
             </>
-          )}
-        </div>
-      </div>
+          ) : undefined
+        }
+      />
 
-      <section className="card grid gap-4 md:grid-cols-4">
+      <FilterPanel columns={4}>
         <FilterField label="Desde">
           <input
             type="date"
@@ -257,7 +255,7 @@ export function TransactionsPage() {
             className="input-field"
           />
         </FilterField>
-      </section>
+      </FilterPanel>
 
       {canWrite && selectedIds.length > 0 && (
         <section className="card flex flex-wrap items-end gap-3">
@@ -593,11 +591,3 @@ function EmptyTransactions({ canWrite, onCreate }: { canWrite: boolean; onCreate
   )
 }
 
-function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block space-y-1 text-sm">
-      <span className="font-medium">{label}</span>
-      {children}
-    </label>
-  )
-}
