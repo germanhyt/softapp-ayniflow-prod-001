@@ -2,16 +2,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { clearAccessToken, setAccessToken } from '../../../../core/sessions/authStorage'
 import type {
+  ChangeOwnPasswordPayload,
   CreateUserPayload,
   LoginPayload,
   Permission,
   Role,
+  UpdateProfilePayload,
   UpdateRolePermissionsPayload,
   UpdateUserPasswordPayload,
   UpdateUserPayload,
   User,
 } from '../../domain/models/auth.types'
 import {
+  changeOwnPasswordRequest,
   createUserRequest,
   deleteUserRequest,
   fetchCurrentUser,
@@ -19,9 +22,12 @@ import {
   fetchRoles,
   fetchUsers,
   loginRequest,
+  removeAvatarRequest,
+  updateProfileRequest,
   updateRolePermissionsRequest,
   updateUserPasswordRequest,
   updateUserRequest,
+  uploadAvatarRequest,
 } from '../../infrastructure/repository/authRepository'
 
 export function useCurrentUser(enabled = true) {
@@ -95,6 +101,42 @@ export function useUpdateUser() {
       updateUserRequest(userId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+    },
+  })
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: UpdateProfilePayload) => updateProfileRequest(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+    },
+  })
+}
+
+export function useChangeOwnPassword() {
+  return useMutation({
+    mutationFn: (payload: ChangeOwnPasswordPayload) => changeOwnPasswordRequest(payload),
+  })
+}
+
+export function useUploadAvatar() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (file: File) => uploadAvatarRequest(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+    },
+  })
+}
+
+export function useRemoveAvatar() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => removeAvatarRequest(),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
     },
   })

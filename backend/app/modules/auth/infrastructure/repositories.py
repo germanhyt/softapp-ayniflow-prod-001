@@ -127,6 +127,12 @@ class AuthRepository:
         self.db.refresh(user)
         return user
 
+    def update_avatar_url(self, user: User, avatar_url: str | None) -> User:
+        user.avatar_url = avatar_url
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
     def delete_user(self, user: User) -> None:
         from app.modules.finance.domain.models import (
             Budget,

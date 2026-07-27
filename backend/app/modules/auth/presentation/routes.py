@@ -1,6 +1,6 @@
 import urllib.parse
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -18,13 +18,16 @@ from app.modules.auth.presentation.deps import (
     serialize_user,
 )
 from app.modules.auth.presentation.schemas import (
+    ChangeOwnPasswordRequest,
     CreateUserRequest,
     GoogleAuthStatusResponse,
     GoogleOAuthStartResponse,
     LoginRequest,
+    MessageResponse,
     PermissionResponse,
     RoleResponse,
     TokenResponse,
+    UpdateProfileRequest,
     UpdateRolePermissionsRequest,
     UpdateUserPasswordRequest,
     UpdateUserPasswordResponse,
@@ -86,6 +89,58 @@ def google_oauth_callback(
 @router.get("/me", response_model=UserResponse)
 def me(current_user: User = Depends(get_current_user)):
     return serialize_user(current_user)
+
+
+@router.patch("/me", response_model=UserResponse)
+def update_me(
+    payload: UpdateProfileRequest,
+    current_user: User = Depends(get_current_user),
+    service: AuthService = Depends(get_auth_service),
+    db: Session = Depends(get_db),
+):
+    service.update_profile(user=current_user, full_name=payload.full_name)
+    repository = AuthRepository(db)
+    updated = repository.get_user_by_id(current_user.id)
+    return serialize_user(updated)
+
+
+@router.patch("/me/password", response_model=MessageResponse)
+def change_my_password(
+    payload: ChangeOwnPasswordRequest,
+    current_user: User = Depends(get_current_user),
+    service: AuthService = Depends(get_auth_service),
+):
+    service.change_own_password(
+        user=current_user,
+        current_password=payload.current_password,
+        new_password=payload.new_password,
+    )
+    return MessageResponse(message="Contraseña actualizada correctamente")
+
+
+@router.post("/me/avatar", response_model=UserResponse)
+async def upload_my_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    service: AuthService = Depends(get_auth_service),
+    db: Session = Depends(get_db),
+):
+    await service.upload_avatar(user=current_user, file=file)
+    repository = AuthRepository(db)
+    updated = repository.get_user_by_id(current_user.id)
+    return serialize_user(updated)
+
+
+@router.delete("/me/avatar", response_model=UserResponse)
+def remove_my_avatar(
+    current_user: User = Depends(get_current_user),
+    service: AuthService = Depends(get_auth_service),
+    db: Session = Depends(get_db),
+):
+    service.remove_avatar(user=current_user)
+    repository = AuthRepository(db)
+    updated = repository.get_user_by_id(current_user.id)
+    return serialize_user(updated)
 
 
 users_router = APIRouter(prefix="/users", tags=["users"])

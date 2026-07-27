@@ -13,6 +13,10 @@ def ensure_auth_schema() -> None:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE users ADD COLUMN google_sub VARCHAR(255) NULL"))
 
+    if "avatar_url" not in columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE users ADD COLUMN avatar_url VARCHAR(512) NULL"))
+
     indexes = {idx["name"] for idx in inspector.get_indexes("users")}
     if "ix_users_google_sub" not in indexes:
         with engine.begin() as conn:

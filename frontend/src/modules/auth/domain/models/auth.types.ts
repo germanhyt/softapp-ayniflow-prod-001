@@ -18,6 +18,8 @@ export interface User {
   username: string
   full_name: string | null
   is_active: boolean
+  google_linked?: boolean
+  avatar_url?: string | null
   roles: Role[]
   permissions: string[]
   created_at?: string
@@ -55,6 +57,19 @@ export interface UpdateUserPasswordPayload {
 export interface UpdateUserPasswordResponse {
   message: string
   password: string
+}
+
+export interface UpdateProfilePayload {
+  full_name?: string | null
+}
+
+export interface ChangeOwnPasswordPayload {
+  current_password: string
+  new_password: string
+}
+
+export interface MessageResponse {
+  message: string
 }
 
 export interface UpdateRolePermissionsPayload {

@@ -19,6 +19,7 @@ frontend/.env
 # Build / cache
 dist/
 frontend/dist/
+uploads/
 *.log
 backend/test_germanhyt.db
 backend/ci_test.db

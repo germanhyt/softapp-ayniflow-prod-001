@@ -653,6 +653,115 @@ body {
     color: var(--premium-text-muted);
   }
 
+  .user-avatar {
+    @apply relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold;
+    background-color: rgba(var(--premium-primary-rgb), 0.14);
+    color: var(--premium-primary);
+  }
+
+  .user-avatar--sm {
+    @apply h-7 w-7 text-[10px];
+  }
+
+  .user-avatar--md {
+    @apply h-10 w-10 text-sm;
+  }
+
+  .user-avatar--lg {
+    @apply h-14 w-14 text-base;
+  }
+
+  .user-avatar--xl {
+    @apply h-28 w-28 text-2xl;
+  }
+
+  .user-avatar__image {
+    @apply h-full w-full object-cover;
+  }
+
+  .user-avatar__initials {
+    @apply leading-none;
+  }
+
+  .profile-layout {
+    @apply grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)] xl:items-start;
+  }
+
+  .profile-sidebar {
+    @apply space-y-4 xl:sticky xl:top-4;
+  }
+
+  .profile-main {
+    @apply min-w-0;
+  }
+
+  .profile-identity-card {
+    @apply space-y-4;
+  }
+
+  .profile-identity-card__header {
+    @apply flex items-center gap-3;
+  }
+
+  .profile-identity-card__meta {
+    @apply border-t pt-4;
+    border-color: var(--premium-border);
+  }
+
+  .profile-avatar-panel {
+    @apply space-y-3;
+  }
+
+  .profile-avatar-panel__actions {
+    @apply flex gap-2;
+  }
+
+  .profile-avatar-panel__hint {
+    @apply text-center text-xs;
+    color: var(--premium-text-muted);
+  }
+
+  .profile-avatar-dropzone {
+    @apply relative mx-auto flex h-36 w-36 items-center justify-center overflow-hidden rounded-full border-2 border-dashed transition-colors;
+    border-color: rgba(var(--premium-primary-rgb), 0.35);
+    background-color: rgba(var(--premium-primary-rgb), 0.06);
+  }
+
+  .profile-avatar-dropzone--active {
+    border-color: var(--premium-primary);
+    background-color: rgba(var(--premium-primary-rgb), 0.12);
+  }
+
+  .profile-avatar-dropzone--busy {
+    @apply opacity-70;
+  }
+
+  .profile-avatar-dropzone__preview {
+    @apply h-full w-full object-cover;
+  }
+
+  .profile-avatar-dropzone__overlay {
+    @apply absolute inset-0 flex flex-col items-center justify-center gap-1 px-3 text-center text-xs font-medium opacity-0 transition-opacity;
+    color: var(--premium-text);
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.72) 0%,
+      rgba(0, 0, 0, 0.18) 55%,
+      transparent 100%
+    );
+  }
+
+  .profile-avatar-dropzone:hover .profile-avatar-dropzone__overlay,
+  .profile-avatar-dropzone--active .profile-avatar-dropzone__overlay {
+    @apply opacity-100;
+  }
+
+  .profile-info-panel {
+    @apply flex items-start gap-3 rounded-xl border p-4;
+    border-color: var(--premium-border);
+    background-color: var(--premium-surface-high);
+  }
+
   .topbar-user-chip strong {
     color: var(--premium-text);
     font-weight: 600;

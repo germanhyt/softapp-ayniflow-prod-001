@@ -1,10 +1,12 @@
 import asyncio
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.config import settings
@@ -19,6 +21,7 @@ from app.core.health import build_health_payload
 from app.core.logging import configure_logging, logger
 from app.core.middleware import RateLimitMiddleware, RequestLoggingMiddleware
 from app.modules.auth.application.auth_schema_seed import ensure_auth_schema
+from app.modules.auth.application.avatar_service import avatar_storage_dir
 from app.modules.auth.application.workspace_seed import ensure_workspace_schema
 from app.modules.auth.application.seed import seed_auth_data
 from app.modules.auth.domain.models import Permission, Role, User  # noqa: F401
@@ -63,6 +66,7 @@ async def lifespan(_: FastAPI):
     ensure_finance_schema()
     ensure_workspace_schema()
     ensure_auth_schema()
+    avatar_storage_dir()
     # Producción: solo seeds estructurales (RBAC/permisos, catálogos, settings).
     # Nunca datos demo ni transacciones de ejemplo.
     seed_auth_data()
@@ -109,6 +113,10 @@ app.add_exception_handler(AppException, app_exception_handler)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, unhandled_exception_handler)
+
+uploads_path = Path(settings.upload_dir)
+uploads_path.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(uploads_path)), name="uploads")
 
 
 @app.get("/health")

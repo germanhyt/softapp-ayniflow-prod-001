@@ -1,5 +1,6 @@
 from app.core.config import settings
 from app.core.security import create_access_token, generate_secure_password, hash_password, verify_password
+from app.modules.auth.application.avatar_service import AvatarService, delete_avatar_file
 from app.modules.auth.application.google_oauth_service import GoogleUserProfile, sanitize_username_base
 from app.modules.auth.domain.models import User
 from app.modules.auth.infrastructure.repositories import AuthRepository
@@ -142,6 +143,41 @@ class AuthService:
             )
         except ValueError as exc:
             raise AppException(str(exc), status_code=400) from exc
+
+    def update_profile(self, *, user: User, full_name: str | None) -> User:
+        try:
+            return self.repository.update_user(user, full_name=full_name)
+        except ValueError as exc:
+            raise AppException(str(exc), status_code=400) from exc
+
+    def change_own_password(
+        self,
+        *,
+        user: User,
+        current_password: str,
+        new_password: str,
+    ) -> None:
+        if user.google_sub:
+            raise AppException(
+                "Tu cuenta usa Google Sign-In. Cambia la contraseña desde tu cuenta de Google.",
+                status_code=400,
+            )
+
+        if not verify_password(current_password, user.hashed_password):
+            raise AppException("Contraseña actual incorrecta", status_code=400)
+
+        if current_password == new_password:
+            raise AppException("La nueva contraseña debe ser distinta a la actual", status_code=400)
+
+        self.repository.update_password(user, new_password)
+
+    async def upload_avatar(self, *, user: User, file) -> User:
+        avatar_url = await AvatarService.save_user_avatar(user=user, file=file)
+        return self.repository.update_avatar_url(user, avatar_url)
+
+    def remove_avatar(self, *, user: User) -> User:
+        delete_avatar_file(user.avatar_url)
+        return self.repository.update_avatar_url(user, None)
 
     def update_user_password(
         self,

@@ -1,11 +1,14 @@
 import { httpClient } from '../../../../core/interceptors/httpClient'
 import { ensureArray } from '../../../../core/utils/collections'
 import type {
+  ChangeOwnPasswordPayload,
   CreateUserPayload,
   LoginPayload,
+  MessageResponse,
   Permission,
   Role,
   TokenResponse,
+  UpdateProfilePayload,
   UpdateRolePermissionsPayload,
   UpdateUserPasswordPayload,
   UpdateUserPasswordResponse,
@@ -20,6 +23,30 @@ export async function loginRequest(payload: LoginPayload): Promise<TokenResponse
 
 export async function fetchCurrentUser(): Promise<User> {
   const { data } = await httpClient.get<User>('/auth/me')
+  return data
+}
+
+export async function updateProfileRequest(payload: UpdateProfilePayload): Promise<User> {
+  const { data } = await httpClient.patch<User>('/auth/me', payload)
+  return data
+}
+
+export async function changeOwnPasswordRequest(payload: ChangeOwnPasswordPayload): Promise<MessageResponse> {
+  const { data } = await httpClient.patch<MessageResponse>('/auth/me/password', payload)
+  return data
+}
+
+export async function uploadAvatarRequest(file: File): Promise<User> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const { data } = await httpClient.post<User>('/auth/me/avatar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return data
+}
+
+export async function removeAvatarRequest(): Promise<User> {
+  const { data } = await httpClient.delete<User>('/auth/me/avatar')
   return data
 }
 

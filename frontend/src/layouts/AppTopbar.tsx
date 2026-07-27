@@ -1,8 +1,9 @@
 import { LogOut, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { NotificationBell } from '../core/components/NotificationBell'
 import { LiveStatusBadge } from '../core/components/LiveStatusBadge'
+import { UserAvatar } from '../core/components/UserAvatar'
 import { APP_NAME } from '../core/constants/app'
 import { PwaInstallButton } from '../core/pwa/PwaInstallButton'
 import { ThemeToggle } from '../core/components/ThemeToggle'
@@ -42,9 +43,15 @@ export function AppTopbar() {
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="topbar-user-chip">
+        <Link to="/profile" className="topbar-user-chip transition-opacity hover:opacity-90" title="Mi perfil">
+          <UserAvatar
+            fullName={user?.full_name}
+            username={user?.username}
+            avatarUrl={user?.avatar_url}
+            size="sm"
+          />
           <strong>{user?.full_name ?? user?.username ?? '—'}</strong>
-        </span>
+        </Link>
         {canReadFinance && <LiveStatusBadge />}
         {canReadFinance && <NotificationBell />}
         <PwaInstallButton />

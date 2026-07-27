@@ -46,11 +46,26 @@ class UserResponse(BaseModel):
     username: str
     full_name: str | None
     is_active: bool
+    google_linked: bool = False
+    avatar_url: str | None = None
     roles: list[RoleResponse]
     permissions: list[str]
     created_at: datetime | None = None
 
     model_config = {"from_attributes": True}
+
+
+class UpdateProfileRequest(BaseModel):
+    full_name: str | None = Field(default=None, max_length=255)
+
+
+class ChangeOwnPasswordRequest(BaseModel):
+    current_password: str = Field(min_length=6, max_length=128)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+class MessageResponse(BaseModel):
+    message: str
 
 
 class CreateUserRequest(BaseModel):

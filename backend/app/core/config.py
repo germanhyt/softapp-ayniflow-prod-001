@@ -57,6 +57,8 @@ class Settings(BaseSettings):
 
     rate_limit_enabled: bool = True
     log_json: bool = True
+    upload_dir: str = Field(default="uploads", validation_alias="UPLOAD_DIR")
+    avatar_max_bytes: int = Field(default=2 * 1024 * 1024, validation_alias="AVATAR_MAX_BYTES")
 
     def production_warnings(self) -> list[str]:
         if self.debug:

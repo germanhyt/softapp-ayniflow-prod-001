@@ -48,6 +48,8 @@ def serialize_user(user: User) -> UserResponse:
         username=user.username,
         full_name=user.full_name,
         is_active=user.is_active,
+        google_linked=bool(user.google_sub),
+        avatar_url=user.avatar_url,
         roles=user.roles,
         permissions=sorted(collect_permissions(user)),
         created_at=user.created_at,

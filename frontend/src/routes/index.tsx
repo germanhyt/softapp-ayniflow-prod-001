@@ -5,6 +5,7 @@ import { AuthLayout } from '../layouts/AuthLayout'
 import { isAuthenticated } from '../core/sessions/authStorage'
 import { DashboardPage } from '../modules/auth/views/DashboardPage'
 import { LoginPage } from '../modules/auth/views/LoginPage'
+import { ProfilePage } from '../modules/auth/views/ProfilePage'
 import { UsersPage } from '../modules/auth/views/UsersPage'
 import { GmailOAuthCallbackPage } from '../modules/finance/views/GmailOAuthCallbackPage'
 import { GoogleOAuthCallbackPage } from '../modules/auth/views/GoogleOAuthCallbackPage'
@@ -48,6 +49,7 @@ export function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Route>
 

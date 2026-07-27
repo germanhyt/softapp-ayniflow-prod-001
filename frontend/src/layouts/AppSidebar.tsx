@@ -8,6 +8,7 @@ import {
   Landmark,
   PiggyBank,
   Plug,
+  UserCircle,
   Users,
   Wallet,
 } from 'lucide-react'
@@ -180,6 +181,13 @@ export function AppSidebar() {
             to="/dashboard"
             icon={LayoutDashboard}
             label="Dashboard"
+            collapsed={collapsed}
+            onNavigate={isMobile ? closeMobile : undefined}
+          />
+          <NavItem
+            to="/profile"
+            icon={UserCircle}
+            label="Mi perfil"
             collapsed={collapsed}
             onNavigate={isMobile ? closeMobile : undefined}
           />
