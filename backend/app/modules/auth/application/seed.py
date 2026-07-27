@@ -39,6 +39,16 @@ ROLES = {
             "finance:read",
         ],
     },
+    "member": {
+        "name": "Usuario",
+        "description": "Auto-registro Google: finanzas completas e integraciones básicas",
+        "permissions": [
+            "finance:read",
+            "finance:write",
+            "integrations:read",
+            "integrations:gmail_connect",
+        ],
+    },
 }
 
 
@@ -47,7 +57,7 @@ def seed_auth_data() -> None:
 
     - Siempre upsert de permisos catalogados.
     - Roles nuevos: se crean con la matriz default.
-    - Roles existentes (operator/reader/custom): solo actualiza nombre/descripción.
+    - Roles existentes (operator/reader/member/custom): solo actualiza nombre/descripción.
       No pisa permisos personalizados desde la UI.
     - Admin existente: agrega permisos faltantes del catálogo (nunca se queda sin acceso).
     """

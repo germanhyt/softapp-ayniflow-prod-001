@@ -9,6 +9,20 @@ def test_list_permissions_requires_roles_read(client, admin_headers):
     assert "finance:read" in codes
 
 
+def test_member_role_has_operator_like_permissions(client, admin_headers):
+    roles = client.get("/roles", headers=admin_headers)
+    assert roles.status_code == 200, roles.text
+    member = next((role for role in roles.json() if role["slug"] == "member"), None)
+    assert member is not None, "Rol member debe existir tras el seed"
+    codes = {item["code"] for item in member["permissions"]}
+    assert codes == {
+        "finance:read",
+        "finance:write",
+        "integrations:read",
+        "integrations:gmail_connect",
+    }
+
+
 def test_update_role_permissions_persists_and_survives_seed(client, admin_headers):
     from app.modules.auth.application.seed import seed_auth_data
 

@@ -42,7 +42,7 @@ class Settings(BaseSettings):
         validation_alias="GOOGLE_AUTH_REDIRECT_URI",
     )
     google_auth_auto_register: bool = Field(default=True, validation_alias="GOOGLE_AUTH_AUTO_REGISTER")
-    google_auth_default_role_slug: str = Field(default="reader", validation_alias="GOOGLE_AUTH_DEFAULT_ROLE")
+    google_auth_default_role_slug: str = Field(default="member", validation_alias="GOOGLE_AUTH_DEFAULT_ROLE")
 
     gmail_client_id: str | None = Field(default=None, validation_alias="GMAIL_CLIENT_ID")
     gmail_client_secret: str | None = Field(default=None, validation_alias="GMAIL_CLIENT_SECRET")
