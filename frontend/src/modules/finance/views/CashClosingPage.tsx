@@ -174,13 +174,9 @@ export function CashClosingPage() {
       ) : data ? (
         <>
           <section
-            className={`stat-summary border-l-4 ${
+            className={`stat-summary ${
               balanceValue >= 0 ? 'stat-summary--success' : 'stat-summary--danger'
             }`}
-            style={{
-              borderLeftColor:
-                balanceValue >= 0 ? 'var(--premium-success)' : 'var(--premium-danger)',
-            }}
           >
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>

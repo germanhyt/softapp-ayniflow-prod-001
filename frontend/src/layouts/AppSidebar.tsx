@@ -113,7 +113,7 @@ function FinanceNavGroup({
         />
       </button>
       {expanded && (
-        <div className="ml-3 space-y-1 border-l pl-2 sidebar-nav-group">
+        <div className="sidebar-nav-group">
           {subItems.map((item) => (
             <NavLink
               key={item.to}

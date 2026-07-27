@@ -274,7 +274,6 @@ body {
     background-color: rgba(var(--premium-primary-rgb), 0.14);
     color: var(--premium-primary);
     font-weight: 600;
-    box-shadow: inset 3px 0 0 var(--premium-primary);
   }
 
   .sidebar-section-label {
@@ -283,8 +282,7 @@ body {
   }
 
   .sidebar-nav-group {
-    @apply ml-3 space-y-1 border-l pl-2;
-    border-color: var(--premium-border);
+    @apply ml-2 space-y-1 pl-3;
   }
 
   .nav-link:hover {

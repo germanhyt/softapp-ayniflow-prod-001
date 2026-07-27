@@ -5,9 +5,10 @@ Referencia visual del frontend. Inspirado en patrones **Spendee** (glanceable, p
 ## Principios
 
 1. **Fondos neutros, marca en acento** — negro/gris en dark, blanco/gris en light. El olive vive en primary, badges y gráficos, no en el canvas.
-2. **Salud a la vista** — presupuestos, ahorros y préstamos muestran barras y badges semánticos (ok / riesgo / excedido).
-3. **Mobile-first en listas** — tablas en desktop (`lg+`), cards en mobile.
-4. **Tokens primero** — cambios globales vía `--premium-*` en `frontend/src/index.css`.
+2. **Sin borde lateral de acento** — estados activos y KPIs usan fondo semántico (`stat-summary--*`, `sidebar-link-active`), no líneas verticales izquierdas.
+3. **Salud a la vista** — presupuestos, ahorros y préstamos muestran barras y badges semánticos (ok / riesgo / excedido).
+4. **Mobile-first en listas** — tablas en desktop (`lg+`), cards en mobile.
+5. **Tokens primero** — cambios globales vía `--premium-*` en `frontend/src/index.css`.
 
 ## Paleta
 
