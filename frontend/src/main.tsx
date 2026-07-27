@@ -3,6 +3,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 
+import { AppBootstrap } from './core/components/skeleton/AppBootstrap'
 import { registerServiceWorker } from './core/pwa/registerServiceWorker'
 import { ThemeProvider } from './core/theme/ThemeProvider'
 import { FinanceSocketProvider } from './modules/finance/application/realtime/FinanceSocketProvider'
@@ -19,7 +20,9 @@ createRoot(document.getElementById('root')!).render(
       <ThemeProvider>
         <BrowserRouter>
           <FinanceSocketProvider>
-            <AppRoutes />
+            <AppBootstrap>
+              <AppRoutes />
+            </AppBootstrap>
           </FinanceSocketProvider>
         </BrowserRouter>
       </ThemeProvider>

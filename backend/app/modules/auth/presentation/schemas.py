@@ -13,6 +13,15 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class GoogleAuthStatusResponse(BaseModel):
+    configured: bool
+    redirect_uri: str
+
+
+class GoogleOAuthStartResponse(BaseModel):
+    authorization_url: str
+
+
 class PermissionResponse(BaseModel):
     id: int
     code: str

@@ -18,6 +18,7 @@ from app.core.exception_handlers import (
 from app.core.health import build_health_payload
 from app.core.logging import configure_logging, logger
 from app.core.middleware import RateLimitMiddleware, RequestLoggingMiddleware
+from app.modules.auth.application.auth_schema_seed import ensure_auth_schema
 from app.modules.auth.application.workspace_seed import ensure_workspace_schema
 from app.modules.auth.application.seed import seed_auth_data
 from app.modules.auth.domain.models import Permission, Role, User  # noqa: F401
@@ -61,6 +62,7 @@ async def lifespan(_: FastAPI):
     Base.metadata.create_all(bind=engine)
     ensure_finance_schema()
     ensure_workspace_schema()
+    ensure_auth_schema()
     # Producción: solo seeds estructurales (RBAC/permisos, catálogos, settings).
     # Nunca datos demo ni transacciones de ejemplo.
     seed_auth_data()

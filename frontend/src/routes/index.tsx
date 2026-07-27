@@ -7,6 +7,7 @@ import { DashboardPage } from '../modules/auth/views/DashboardPage'
 import { LoginPage } from '../modules/auth/views/LoginPage'
 import { UsersPage } from '../modules/auth/views/UsersPage'
 import { GmailOAuthCallbackPage } from '../modules/finance/views/GmailOAuthCallbackPage'
+import { GoogleOAuthCallbackPage } from '../modules/auth/views/GoogleOAuthCallbackPage'
 import { BudgetsPage } from '../modules/finance/views/BudgetsPage'
 import { CashClosingPage } from '../modules/finance/views/CashClosingPage'
 import { FinanceOverviewPage } from '../modules/finance/views/FinanceOverviewPage'
@@ -36,6 +37,8 @@ export function AppRoutes() {
           </PublicOnly>
         }
       />
+
+      <Route path="/oauth/google/callback" element={<GoogleOAuthCallbackPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route path="/oauth/gmail/callback" element={<GmailOAuthCallbackPage />} />

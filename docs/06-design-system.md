@@ -107,6 +107,27 @@ Labels de stat: `.stat-summary__label` (uppercase, tracking-wide).
 - `ThemeProvider` — `localStorage` key `ayniflow-theme`, default **dark**
 - Toggle: `ThemeToggle` en topbar y login
 - Clase `.dark` en `<html>` (ver `frontend/index.html`)
+- **Dark:** fondo `#000000`, superficies `#0d0d0d` / `#1a1a1a`
+- **Light:** fondo `#f5f5f5`, superficies blancas/gris neutro
+- Olive solo en acentos de marca
+
+## Google Sign-In
+
+- Backend: `GET /auth/google/status`, `/auth/google/oauth/start`, callback en `/auth/google/oauth/callback`
+- Variables: `GOOGLE_AUTH_CLIENT_*` (fallback a `GMAIL_CLIENT_*`)
+- Frontend: botón en login → `GoogleOAuthModal` → popup OAuth → `GoogleOAuthCallbackPage`
+- Auto-registro con rol `GOOGLE_AUTH_DEFAULT_ROLE` (default `reader`)
+
+## Skeleton loaders
+
+| Componente | Uso |
+|------------|-----|
+| `index.html` (`#root:empty`) | Pulso mínimo antes de montar React |
+| `AppBootstrap` | Skeleton inicial según ruta (auth vs app) |
+| `AppShellSkeleton` | Carga de sesión en rutas protegidas |
+| `AuthSessionSkeleton` | Pantallas auth mínimas |
+| `TableSkeleton` | Tablas en carga |
+| Clase `.skeleton` | Pulso inline en cards |
 
 ## Archivos clave
 

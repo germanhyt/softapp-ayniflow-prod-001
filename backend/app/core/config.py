@@ -35,6 +35,15 @@ class Settings(BaseSettings):
     google_spreadsheet_id: str | None = None
     google_spreadsheet_range: str = "Transacciones!A:J"
 
+    google_auth_client_id: str | None = Field(default=None, validation_alias="GOOGLE_AUTH_CLIENT_ID")
+    google_auth_client_secret: str | None = Field(default=None, validation_alias="GOOGLE_AUTH_CLIENT_SECRET")
+    google_auth_redirect_uri: str = Field(
+        default="http://localhost:8000/auth/google/oauth/callback",
+        validation_alias="GOOGLE_AUTH_REDIRECT_URI",
+    )
+    google_auth_auto_register: bool = Field(default=True, validation_alias="GOOGLE_AUTH_AUTO_REGISTER")
+    google_auth_default_role_slug: str = Field(default="reader", validation_alias="GOOGLE_AUTH_DEFAULT_ROLE")
+
     gmail_client_id: str | None = Field(default=None, validation_alias="GMAIL_CLIENT_ID")
     gmail_client_secret: str | None = Field(default=None, validation_alias="GMAIL_CLIENT_SECRET")
     gmail_refresh_token: str | None = Field(default=None, validation_alias="GMAIL_REFRESH_TOKEN")

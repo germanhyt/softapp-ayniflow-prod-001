@@ -1,7 +1,12 @@
+import urllib.parse
+
 from fastapi import APIRouter, Depends
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import get_db
+from app.modules.auth.application.google_oauth_service import GoogleOAuthService
 from app.modules.auth.application.services import AuthService
 from app.modules.auth.domain.models import User
 from app.modules.auth.infrastructure.repositories import AuthRepository
@@ -14,6 +19,8 @@ from app.modules.auth.presentation.deps import (
 )
 from app.modules.auth.presentation.schemas import (
     CreateUserRequest,
+    GoogleAuthStatusResponse,
+    GoogleOAuthStartResponse,
     LoginRequest,
     PermissionResponse,
     RoleResponse,
@@ -24,6 +31,7 @@ from app.modules.auth.presentation.schemas import (
     UpdateUserRequest,
     UserResponse,
 )
+from app.shared.exceptions import AppException
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -32,6 +40,47 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def login(payload: LoginRequest, service: AuthService = Depends(get_auth_service)):
     token, _user = service.login(payload.username, payload.password)
     return TokenResponse(access_token=token)
+
+
+@router.get("/google/status", response_model=GoogleAuthStatusResponse)
+def google_auth_status():
+    status = GoogleOAuthService.get_status()
+    return GoogleAuthStatusResponse(**status)
+
+
+@router.get("/google/oauth/start", response_model=GoogleOAuthStartResponse)
+def google_oauth_start():
+    url = GoogleOAuthService.build_authorization_url()
+    return GoogleOAuthStartResponse(authorization_url=url)
+
+
+@router.get("/google/oauth/callback")
+def google_oauth_callback(
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    db: Session = Depends(get_db),
+):
+    frontend_base = settings.cors_origins.split(",")[0].strip()
+
+    def _frontend_redirect(params: dict[str, str]) -> RedirectResponse:
+        query = urllib.parse.urlencode(params)
+        return RedirectResponse(f"{frontend_base}/oauth/google/callback?{query}")
+
+    if error:
+        return _frontend_redirect({"google_auth": "error", "reason": error})
+
+    if not code or not state:
+        raise AppException("Callback OAuth incompleto", status_code=400)
+
+    try:
+        profile = GoogleOAuthService.complete_oauth(code=code, state=state)
+        repository = AuthRepository(db)
+        service = AuthService(repository)
+        token, _user = service.login_with_google(profile)
+        return _frontend_redirect({"google_auth": "success", "access_token": token})
+    except AppException as exc:
+        return _frontend_redirect({"google_auth": "error", "reason": str(exc)})
 
 
 @router.get("/me", response_model=UserResponse)

@@ -1,4 +1,6 @@
-from app.core.security import create_access_token, generate_secure_password, verify_password
+from app.core.config import settings
+from app.core.security import create_access_token, generate_secure_password, hash_password, verify_password
+from app.modules.auth.application.google_oauth_service import GoogleUserProfile, sanitize_username_base
 from app.modules.auth.domain.models import User
 from app.modules.auth.infrastructure.repositories import AuthRepository
 from app.shared.exceptions import AppException
@@ -32,6 +34,67 @@ class AuthService:
             extra={"username": user.username, "roles": collect_role_slugs(user)},
         )
         return token, user
+
+    def login_with_google(self, profile: GoogleUserProfile) -> tuple[str, User]:
+        if not profile.email_verified:
+            raise AppException("El email de Google no está verificado", status_code=403)
+
+        user = self.repository.get_user_by_google_sub(profile.sub)
+        if user is None:
+            user = self.repository.get_user_by_email(profile.email)
+            if user is not None:
+                if user.google_sub and user.google_sub != profile.sub:
+                    raise AppException(
+                        "Este email ya está vinculado a otra cuenta de Google",
+                        status_code=409,
+                    )
+                user = self.repository.link_google_sub(user, profile.sub, profile.name)
+            elif settings.google_auth_auto_register:
+                user = self._register_google_user(profile)
+            else:
+                raise AppException(
+                    "No existe una cuenta con este email. Contacta al administrador.",
+                    status_code=403,
+                )
+
+        if user is None:
+            raise AppException("No se pudo autenticar con Google", status_code=500)
+
+        if not user.is_active:
+            raise AppException("Usuario inactivo", status_code=403)
+
+        token = create_access_token(
+            subject=str(user.id),
+            extra={"username": user.username, "roles": collect_role_slugs(user)},
+        )
+        return token, user
+
+    def _register_google_user(self, profile: GoogleUserProfile) -> User:
+        email_local = profile.email.split("@", 1)[0]
+        base_username = sanitize_username_base(email_local)
+        username = base_username
+        suffix = 1
+        while self.repository.username_exists(username):
+            username = f"{base_username}{suffix}"
+            suffix += 1
+
+        password = generate_secure_password()
+        try:
+            created = self.repository.create_user(
+                email=profile.email,
+                username=username,
+                password=password,
+                full_name=profile.name,
+                role_slug=settings.google_auth_default_role_slug,
+                google_sub=profile.sub,
+            )
+        except ValueError as exc:
+            raise AppException(str(exc), status_code=400) from exc
+
+        reloaded = self.repository.get_user_by_id(created.id)
+        if reloaded is None:
+            raise AppException("No se pudo crear el usuario", status_code=500)
+        return reloaded
 
     def create_user(
         self,

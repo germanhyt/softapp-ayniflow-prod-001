@@ -23,6 +23,42 @@
       href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
     />
     <title>AyniFlow</title>
+    <style>
+      #root:empty {
+        min-height: 100vh;
+        background: #000;
+      }
+      #root:empty::before {
+        content: '';
+        display: block;
+        width: 9rem;
+        height: 2.25rem;
+        margin: 1rem 0 0 1rem;
+        border-radius: 0.5rem;
+        background: linear-gradient(90deg, #1a1a1a 25%, #262626 50%, #1a1a1a 75%);
+        background-size: 200% 100%;
+        animation: ayni-skeleton 1.2s ease-in-out infinite;
+      }
+      #root:empty::after {
+        content: '';
+        display: block;
+        margin: 1.5rem 1rem 0;
+        height: 0.875rem;
+        max-width: 12rem;
+        border-radius: 0.375rem;
+        background: linear-gradient(90deg, #1a1a1a 25%, #262626 50%, #1a1a1a 75%);
+        background-size: 200% 100%;
+        animation: ayni-skeleton 1.2s ease-in-out infinite;
+      }
+      @keyframes ayni-skeleton {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

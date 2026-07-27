@@ -33,7 +33,23 @@ class AuthRepository:
         )
 
     def get_user_by_email(self, email: str) -> User | None:
-        return self.db.query(User).filter(User.email == email).first()
+        return (
+            self.db.query(User)
+            .options(joinedload(User.roles).joinedload(Role.permissions))
+            .filter(User.email == email)
+            .first()
+        )
+
+    def get_user_by_google_sub(self, google_sub: str) -> User | None:
+        return (
+            self.db.query(User)
+            .options(joinedload(User.roles).joinedload(Role.permissions))
+            .filter(User.google_sub == google_sub)
+            .first()
+        )
+
+    def username_exists(self, username: str) -> bool:
+        return self.db.query(User.id).filter(User.username == username).first() is not None
 
     def get_role_by_slug(self, slug: str) -> Role | None:
         return self.db.query(Role).filter(Role.slug == slug).first()
@@ -49,6 +65,14 @@ class AuthRepository:
     def list_permissions(self) -> list[Permission]:
         return self.db.query(Permission).order_by(Permission.code.asc()).all()
 
+    def link_google_sub(self, user: User, google_sub: str, full_name: str | None = None) -> User:
+        user.google_sub = google_sub
+        if full_name and not user.full_name:
+            user.full_name = full_name
+        self.db.commit()
+        reloaded = self.get_user_by_id(user.id)
+        return reloaded or user
+
     def create_user(
         self,
         *,
@@ -57,6 +81,7 @@ class AuthRepository:
         password: str,
         full_name: str | None,
         role_slug: str,
+        google_sub: str | None = None,
     ) -> User:
         role = self.db.query(Role).filter(Role.slug == role_slug).first()
         if role is None:
@@ -67,6 +92,7 @@ class AuthRepository:
             username=username,
             hashed_password=hash_password(password),
             full_name=full_name,
+            google_sub=google_sub,
             roles=[role],
         )
         self.db.add(user)

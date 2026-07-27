@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom'
 
+import { AppShellSkeleton } from '../core/components/skeleton/AppShellSkeleton'
 import { isAuthenticated } from '../core/sessions/authStorage'
 import { useCurrentUser } from '../modules/auth/application/hooks/useAuth'
 
@@ -20,11 +21,7 @@ function ProtectedContent({ permission, anyPermission }: ProtectedRouteProps) {
   const { data: user, isLoading, isError } = useCurrentUser()
 
   if (isLoading) {
-    return (
-      <div className="app-shell flex min-h-screen items-center justify-center">
-        <p className="text-muted">Cargando sesión...</p>
-      </div>
-    )
+    return <AppShellSkeleton />
   }
 
   if (isError || !user) {
