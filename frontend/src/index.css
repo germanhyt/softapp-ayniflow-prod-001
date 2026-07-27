@@ -690,6 +690,97 @@ body {
     background-color: var(--premium-surface-high);
   }
 
+  .modal-section {
+    @apply space-y-3 rounded-xl border p-4;
+    border-color: var(--premium-border);
+    background-color: var(--premium-surface-high);
+  }
+
+  .modal-section__header {
+    @apply flex flex-wrap items-start justify-between gap-3;
+  }
+
+  .modal-section__title-row {
+    @apply flex items-center gap-2;
+  }
+
+  .modal-section__icon {
+    color: var(--premium-primary);
+  }
+
+  .modal-section__title {
+    @apply text-sm font-semibold;
+  }
+
+  .modal-section__description {
+    @apply mt-1 text-xs;
+    color: var(--premium-text-muted);
+  }
+
+  .modal-section__actions {
+    @apply shrink-0;
+  }
+
+  .modal-section__body {
+    @apply space-y-3;
+  }
+
+  .integration-panel {
+    @apply rounded-xl border;
+    border-color: var(--premium-border);
+    background-color: var(--premium-surface);
+  }
+
+  .integration-panel__header {
+    @apply border-b px-4 py-3;
+    border-color: var(--premium-border);
+  }
+
+  .integration-panel__title-row {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .integration-panel__icon {
+    color: var(--premium-primary);
+  }
+
+  .integration-panel__title {
+    @apply font-medium;
+  }
+
+  .integration-panel__description {
+    @apply mt-1 text-sm;
+    color: var(--premium-text-muted);
+  }
+
+  .integration-panel__body {
+    @apply space-y-4 p-4;
+  }
+
+  .integration-toggle-row {
+    @apply flex flex-wrap items-center justify-between gap-3 rounded-lg border px-3 py-3 transition-colors;
+    border-color: var(--premium-border);
+    background-color: var(--premium-surface-high);
+  }
+
+  .integration-toggle-row:hover {
+    border-color: rgba(var(--premium-primary-rgb), 0.25);
+  }
+
+  .integration-status-box {
+    @apply rounded-lg border p-3 text-sm;
+    border-color: var(--premium-border);
+    background-color: var(--premium-surface-high);
+  }
+
+  .integration-actions {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .pwa-install-btn {
+    @apply inline-flex items-center gap-1.5;
+  }
+
   .movement-toggle {
     @apply grid grid-cols-2 gap-2 rounded-lg p-1;
     background-color: var(--premium-bg);
@@ -939,14 +1030,24 @@ body {
   }
 
   .sound-toggle {
-    @apply rounded-md px-2 py-1 text-xs;
-    background-color: var(--premium-bg);
-    color: var(--premium-text-muted);
+    @apply rounded-md px-2 py-1 text-xs font-medium transition-colors;
+    background-color: rgba(var(--premium-primary-rgb), 0.1);
+    color: var(--premium-primary);
+  }
+
+  .sound-toggle:hover {
+    background-color: rgba(var(--premium-primary-rgb), 0.16);
   }
 
   .notifications-empty {
-    @apply px-4 py-6 text-sm;
+    @apply flex flex-col items-center gap-2 px-4 py-8 text-center text-sm;
     color: var(--premium-text-muted);
+  }
+
+  .notifications-empty__icon {
+    @apply flex h-10 w-10 items-center justify-center rounded-xl;
+    background-color: rgba(var(--premium-primary-rgb), 0.12);
+    color: var(--premium-primary);
   }
 
   .notifications-list {

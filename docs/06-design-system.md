@@ -61,6 +61,8 @@ Labels de stat: `.stat-summary__label` (uppercase, tracking-wide).
 | `CategoryChip` | `name`, `color` | Identidad de categoría |
 | `BrandLogo` / `BrandIcon` | — | Marca animada |
 | `FormField` / `ModalFormActions` | labels + footer modal | Formularios en modales |
+| `ModalSection` | secciones internas en modales complejos |
+| `IntegrationPanel` | bloques Gmail/Sheets/Webhooks/OCR |
 | `PageHeader` | `title`, `description?`, `icon?`, `badge?`, `actions?` | Encabezado de módulo |
 | `FilterField` / `FilterPanel` | labels + grid | Filtros de listado |
 | `SegmentTabs` | opciones pill | Tabs Debo/Me deben, presets de periodo |

@@ -149,13 +149,27 @@ export function NotificationBell() {
           </div>
 
           {items.length === 0 ? (
-            <p className="notifications-empty">Sin notificaciones recientes.</p>
+            <div className="notifications-empty">
+              <span className="notifications-empty__icon" aria-hidden>
+                <Bell size={18} />
+              </span>
+              <p>Sin notificaciones recientes.</p>
+            </div>
           ) : (
             <ul className="notifications-list">
               {items.map((item) => (
                 <li key={item.id} className={`notification-item${item.is_read ? '' : ' unread'}`}>
                   <div className="notification-main">
-                    <strong>{item.title}</strong>
+                    <div className="flex min-w-0 items-start gap-2">
+                      {!item.is_read ? (
+                        <span
+                          className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+                          style={{ backgroundColor: 'var(--premium-primary)' }}
+                          aria-hidden
+                        />
+                      ) : null}
+                      <strong className="min-w-0">{item.title}</strong>
+                    </div>
                     <span className="notification-meta">
                       {item.created_at ? formatRegisteredAt(item.created_at) : ''}
                     </span>

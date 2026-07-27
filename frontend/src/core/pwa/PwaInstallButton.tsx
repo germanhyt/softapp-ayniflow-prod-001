@@ -61,11 +61,11 @@ export function PwaInstallButton() {
     <button
       type="button"
       onClick={handleInstall}
-      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-muted transition-colors hover:bg-[rgba(var(--premium-primary-rgb),0.08)] hover:text-premium-text"
+      className="btn-secondary pwa-install-btn text-xs"
       title="Instalar AyniFlow en este dispositivo"
     >
       <Download size={14} />
-      Instalar app
+      <span className="hidden sm:inline">Instalar app</span>
     </button>
   )
 }

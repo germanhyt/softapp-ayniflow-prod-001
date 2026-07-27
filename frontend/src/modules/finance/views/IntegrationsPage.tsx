@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Plug, ShieldAlert } from 'lucide-react'
+import { FileSpreadsheet, Mail, Plug, ScanLine, ShieldAlert, Webhook } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 
 import { HealthBadge } from '../../../core/components/HealthBadge'
+import { IntegrationPanel } from '../../../core/components/IntegrationPanel'
 import { PageHeader } from '../../../core/components/PageHeader'
 import { ProgressBar } from '../../../core/components/ProgressBar'
 import { StatSummary } from '../../../core/components/StatSummary'
@@ -68,10 +69,7 @@ function FeatureToggleRow({
   saving?: boolean
 }) {
   return (
-    <div
-      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-3 py-3"
-      style={{ borderColor: 'var(--premium-border)' }}
-    >
+    <div className="integration-toggle-row">
       <div className="min-w-0 flex-1">
         <p className="font-medium">{item.label}</p>
         <p className="text-sm text-muted">{item.description}</p>
@@ -417,14 +415,20 @@ export function IntegrationsPage() {
       )}
 
       {(canGmail || canWrite) && (
-        <section className="card space-y-4">
-          <h3 className="font-medium">Gmail BCP/Yape</h3>
-          <p className="text-sm text-muted">
-            Vincula tu cuenta de Gmail en una ventana emergente para importar correos BCP/Yape.
-          </p>
-
+        <IntegrationPanel
+          title="Gmail BCP/Yape"
+          description="Vincula tu cuenta de Gmail en una ventana emergente para importar correos BCP/Yape."
+          icon={Mail}
+          badge={
+            gmailConnected ? (
+              <HealthBadge label="Conectado" tone="success" />
+            ) : (
+              <HealthBadge label="Pendiente" tone="warning" />
+            )
+          }
+        >
           {canWrite && gmailPollStatus && (
-            <div className="rounded-lg border p-3 text-sm" style={{ borderColor: 'var(--premium-border)' }}>
+            <div className="integration-status-box">
               <p className="font-medium">Estado realtime efectivo</p>
               <p className="mt-1 text-muted">
                 Loop: <strong>{gmailPollStatus.loop_running ? 'Activo' : 'Inactivo'}</strong> · Toggle:
@@ -480,7 +484,7 @@ export function IntegrationsPage() {
             </p>
           )}
 
-          <div className="flex flex-wrap gap-2">
+          <div className="integration-actions">
             {canGmail && (
               !gmailConnected ? (
                 <button
@@ -564,60 +568,88 @@ export function IntegrationsPage() {
               <code className="font-mono">{gmailConnection.redirect_uri}</code>
             </p>
           )}
-        </section>
+        </IntegrationPanel>
       )}
 
       {canWrite && (
         <>
-          <section className="card space-y-4">
-            <h3 className="font-medium">Google Sheets</h3>
-            <p className="text-sm text-muted">
-              Credenciales de cuenta de servicio en <code>.env</code>. ID y rango configurables abajo.
-            </p>
+          <IntegrationPanel
+            title="Google Sheets"
+            description={
+              <>
+                Credenciales de cuenta de servicio en <code>.env</code>. ID y rango configurables abajo.
+              </>
+            }
+            icon={FileSpreadsheet}
+            badge={
+              status?.google_sheets.configured ? (
+                <HealthBadge label="Listo" tone="success" />
+              ) : (
+                <HealthBadge label="Pendiente" tone="warning" />
+              )
+            }
+          >
             {feature('google_sheets')}
             <div className="grid gap-3 md:grid-cols-2">
               {config('google_spreadsheet_id')}
               {config('google_spreadsheet_range')}
             </div>
-            <button
-              type="button"
-              onClick={handleSheetsSync}
-              disabled={
-                syncSheets.isPending ||
-                status?.google_sheets.configured === false ||
-                !isSettingEnabled('google_sheets')
-              }
-              className="btn-secondary"
-            >
-              {syncSheets.isPending ? 'Sincronizando...' : 'Sincronizar ahora'}
-            </button>
-          </section>
+            <div className="integration-actions">
+              <button
+                type="button"
+                onClick={handleSheetsSync}
+                disabled={
+                  syncSheets.isPending ||
+                  status?.google_sheets.configured === false ||
+                  !isSettingEnabled('google_sheets')
+                }
+                className="btn-secondary"
+              >
+                {syncSheets.isPending ? 'Sincronizando…' : 'Sincronizar ahora'}
+              </button>
+            </div>
+          </IntegrationPanel>
 
-          <section className="card space-y-4">
-            <h3 className="font-medium">Webhooks</h3>
-            <p className="text-sm text-muted">
-              <code>WEBHOOK_SECRET</code> permanece en <code>.env</code>. La URL de alertas es configurable.
-            </p>
+          <IntegrationPanel
+            title="Webhooks"
+            description={
+              <>
+                <code>WEBHOOK_SECRET</code> permanece en <code>.env</code>. La URL de alertas es configurable.
+              </>
+            }
+            icon={Webhook}
+          >
             <div className="space-y-3">
               {feature('webhook_inbound')}
               {feature('webhook_notifications')}
             </div>
             {config('webhook_notification_url')}
-          </section>
+          </IntegrationPanel>
 
-          <section className="card space-y-4">
-            <h3 className="font-medium">OCR vouchers (Gemini)</h3>
-            <p className="text-sm text-muted">
-              Con Gemini activo se usa la API (clave aquí o <code>GEMINI_API_KEY</code> en <code>.env</code>).
-              Si lo desactivas, el escaneo usa OCR local en el navegador (Tesseract), sin llamadas al servidor.
-            </p>
+          <IntegrationPanel
+            title="OCR vouchers (Gemini)"
+            description={
+              <>
+                Con Gemini activo se usa la API (clave aquí o <code>GEMINI_API_KEY</code> en <code>.env</code>).
+                Si lo desactivas, el escaneo usa OCR local en el navegador (Tesseract).
+              </>
+            }
+            icon={ScanLine}
+            badge={
+              status?.gemini_ocr.configured ? (
+                <HealthBadge label="Configurado" tone="success" />
+              ) : (
+                <HealthBadge label="Opcional" tone="info" />
+              )
+            }
+          >
             {feature('gemini_ocr')}
             {config('gemini_api_key')}
-          </section>
+          </IntegrationPanel>
         </>
       )}
 
-      {message && <p className="alert-info">{message}</p>}
+      {message && <p className="alert-info rounded-lg px-4 py-3 text-sm">{message}</p>}
     </div>
   )
 }

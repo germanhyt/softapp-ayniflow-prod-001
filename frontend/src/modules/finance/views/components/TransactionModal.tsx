@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ScanLine } from 'lucide-react'
+import { Link2, ScanLine } from 'lucide-react'
 
-import { Modal } from '../../../../core/components/Modal'
 import { FormField, ModalFormActions } from '../../../../core/components/FormField'
+import { Modal } from '../../../../core/components/Modal'
+import { ModalSection } from '../../../../core/components/ModalSection'
 import { alertError, alertSuccess } from '../../../../core/utils/alerts'
 import { useCreateTransaction, useIsIntegrationEnabled, useUpdateTransaction, useVoucherOcr } from '../../application/hooks/useFinance'
 import type { CatalogItem, LoanRecord, MovementType, OcrExtractResult, SavingsGoal, Transaction } from '../../domain/models/finance.types'
@@ -205,43 +206,60 @@ export function TransactionModal({
     }
   }
 
+  const showLinkSection =
+    (form.movement_type === 'Ingreso' && receivableLoans.length > 0) ||
+    (form.movement_type === 'Egreso' &&
+      (savingsGoals.length > 0 || payableLoans.length > 0 || receivableLoans.length > 0))
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={isEditing ? 'Editar transacción' : 'Nueva transacción'}
+      subtitle={
+        isEditing
+          ? 'Actualiza los datos del movimiento registrado.'
+          : 'Registra manualmente o escanea un voucher BCP/Yape.'
+      }
       size="lg"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="modal-form space-y-4">
         {!isEditing && (
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm text-muted">
-              Registra manualmente o escanea un voucher
-              {geminiOcrEnabled ? ' (Gemini)' : ' (OCR del navegador)'}.
-            </p>
-            <div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleOcrUpload}
-              />
-              <button
-                type="button"
-                className="btn-secondary inline-flex items-center gap-2"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={ocrScanning || voucherOcr.isPending}
-              >
-                <ScanLine size={16} />
-                {ocrScanning || voucherOcr.isPending ? 'Escaneando...' : 'Escanear voucher'}
-              </button>
-            </div>
-          </div>
+          <ModalSection
+            title="Escanear voucher"
+            description={
+              geminiOcrEnabled
+                ? 'Extracción con Gemini. Revisa los campos antes de guardar.'
+                : 'OCR local en el navegador (Tesseract).'
+            }
+            icon={ScanLine}
+            actions={
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleOcrUpload}
+                />
+                <button
+                  type="button"
+                  className="btn-secondary inline-flex items-center gap-2"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={ocrScanning || voucherOcr.isPending}
+                >
+                  <ScanLine size={16} />
+                  {ocrScanning || voucherOcr.isPending ? 'Escaneando…' : 'Subir imagen'}
+                </button>
+              </>
+            }
+          >
+            {ocrMessage ? <p className="alert-info rounded-lg px-3 py-2 text-sm">{ocrMessage}</p> : null}
+          </ModalSection>
         )}
 
-        {!isEditing && ocrMessage && <p className="alert-info">{ocrMessage}</p>}
-        <div className="movement-toggle">
+        <ModalSection title="Tipo de movimiento" description="Define si es ingreso o egreso.">
+          <div className="movement-toggle">
           <button
             type="button"
             className={`movement-toggle-btn${
@@ -273,9 +291,11 @@ export function TransactionModal({
           >
             EGRESO
           </button>
-        </div>
+          </div>
+        </ModalSection>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <ModalSection title="Datos del movimiento" description="Información principal del registro.">
+        <div className="modal-form-grid">
           <FormField label="Fecha">
             <input
               type="date"
@@ -374,8 +394,18 @@ export function TransactionModal({
               placeholder="Nombre o entidad"
             />
           </FormField>
+        </div>
+        </ModalSection>
+
+        {showLinkSection && (
+          <ModalSection
+            title="Vínculos opcionales"
+            description="Asocia el movimiento a metas de ahorro o créditos activos."
+            icon={Link2}
+          >
+            <div className="modal-form-grid">
           {form.movement_type === 'Ingreso' && receivableLoans.length > 0 && (
-            <FormField label="Vincular cobro (me deben)">
+            <FormField label="Vincular cobro (me deben)" className="md:col-span-2">
               <select
                 value={form.loan_record_id}
                 onChange={(e) =>
@@ -398,28 +428,30 @@ export function TransactionModal({
           )}
           {form.movement_type === 'Egreso' && (
             <>
-              <FormField label="Vincular a meta de ahorro">
-                <select
-                  value={form.savings_goal_id}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      savings_goal_id: e.target.value,
-                      loan_record_id: e.target.value ? '' : form.loan_record_id,
-                    })
-                  }
-                  className="input-field"
-                >
-                  <option value="">Sin vínculo</option>
-                  {savingsGoals.map((goal) => (
-                    <option key={goal.id} value={goal.id}>
-                      {goal.name}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
+              {savingsGoals.length > 0 && (
+                <FormField label="Vincular a meta de ahorro">
+                  <select
+                    value={form.savings_goal_id}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        savings_goal_id: e.target.value,
+                        loan_record_id: e.target.value ? '' : form.loan_record_id,
+                      })
+                    }
+                    className="input-field"
+                  >
+                    <option value="">Sin vínculo</option>
+                    {savingsGoals.map((goal) => (
+                      <option key={goal.id} value={goal.id}>
+                        {goal.name}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              )}
               {(payableLoans.length > 0 || receivableLoans.length > 0) && (
-                <FormField label="Vincular crédito">
+                <FormField label="Vincular crédito" className={savingsGoals.length > 0 ? undefined : 'md:col-span-2'}>
                   <select
                     value={form.loan_record_id}
                     onChange={(e) =>
@@ -455,7 +487,9 @@ export function TransactionModal({
               )}
             </>
           )}
-        </div>
+            </div>
+          </ModalSection>
+        )}
 
         {error && <p className="alert-error rounded-lg px-3 py-2 text-sm">{error}</p>}
 
