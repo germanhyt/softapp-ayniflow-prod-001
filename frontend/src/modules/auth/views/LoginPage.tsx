@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
+import { FormField } from '../../../core/components/FormField'
 import { GoogleIcon } from '../../../core/components/GoogleIcon'
 import { GoogleOAuthModal } from '../../../core/components/GoogleOAuthModal'
 import { PasswordInput } from '../../../core/components/PasswordInput'
@@ -53,7 +54,7 @@ export function LoginPage() {
 
   return (
     <>
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <form className="modal-form" onSubmit={handleSubmit}>
         {googleEnabled && (
           <>
             <button
@@ -64,20 +65,14 @@ export function LoginPage() {
               <GoogleIcon size={18} />
               Continuar con Google
             </button>
-            <div className="relative py-1 text-center text-xs text-muted">
-              <span className="bg-[var(--premium-surface)] px-2">o con usuario</span>
-              <div
-                className="pointer-events-none absolute inset-x-0 top-1/2 -z-10 border-t"
-                style={{ borderColor: 'var(--premium-border)' }}
-              />
+            <div className="auth-divider">
+              <span className="auth-divider__label">o con usuario</span>
+              <div className="auth-divider__line" />
             </div>
           </>
         )}
 
-        <div>
-          <label htmlFor="username" className="mb-1 block text-sm font-medium">
-            Usuario
-          </label>
+        <FormField label="Usuario" htmlFor="username">
           <input
             id="username"
             type="text"
@@ -88,12 +83,9 @@ export function LoginPage() {
             autoComplete="username"
             required
           />
-        </div>
+        </FormField>
 
-        <div>
-          <label htmlFor="password" className="mb-1 block text-sm font-medium">
-            Contraseña
-          </label>
+        <FormField label="Contraseña" htmlFor="password">
           <PasswordInput
             id="password"
             value={password}
@@ -102,7 +94,7 @@ export function LoginPage() {
             autoComplete="current-password"
             required
           />
-        </div>
+        </FormField>
 
         {error && <p className="alert-error rounded-lg px-3 py-2 text-sm">{error}</p>}
 

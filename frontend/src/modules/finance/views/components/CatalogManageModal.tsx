@@ -1,7 +1,9 @@
 import { Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
+import { HealthBadge } from '../../../../core/components/HealthBadge'
 import { Modal } from '../../../../core/components/Modal'
+import { TableSkeleton } from '../../../../core/components/skeleton/AppShellSkeleton'
 import { alertError, alertSuccess, confirmAction } from '../../../../core/utils/alerts'
 import type { CatalogItem, CatalogKind } from '../../domain/models/finance.types'
 import { useCatalog, useCatalogMutations } from '../../application/hooks/useCatalog'
@@ -113,7 +115,7 @@ export function CatalogManageModal({ kind, isOpen, onClose }: CatalogManageModal
             {isLoading ? (
               <tr>
                 <td className="px-4 py-3" colSpan={3}>
-                  Cargando...
+                  <TableSkeleton rows={4} />
                 </td>
               </tr>
             ) : items?.length ? (
@@ -132,12 +134,11 @@ export function CatalogManageModal({ kind, isOpen, onClose }: CatalogManageModal
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => toggleActive(item)}
-                      className={`badge ${item.is_active ? '' : 'opacity-60'}`}
-                    >
-                      {item.is_active ? 'Activo' : 'Inactivo'}
+                    <button type="button" onClick={() => toggleActive(item)}>
+                      <HealthBadge
+                        label={item.is_active ? 'Activo' : 'Inactivo'}
+                        tone={item.is_active ? 'success' : 'warning'}
+                      />
                     </button>
                   </td>
                   <td className="px-4 py-3">

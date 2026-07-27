@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ScanLine } from 'lucide-react'
 
 import { Modal } from '../../../../core/components/Modal'
+import { FormField, ModalFormActions } from '../../../../core/components/FormField'
 import { alertError, alertSuccess } from '../../../../core/utils/alerts'
 import { useCreateTransaction, useIsIntegrationEnabled, useUpdateTransaction, useVoucherOcr } from '../../application/hooks/useFinance'
 import type { CatalogItem, LoanRecord, MovementType, OcrExtractResult, SavingsGoal, Transaction } from '../../domain/models/finance.types'
@@ -275,7 +276,7 @@ export function TransactionModal({
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Fecha">
+          <FormField label="Fecha">
             <input
               type="date"
               value={form.transaction_date}
@@ -283,8 +284,8 @@ export function TransactionModal({
               className="input-field"
               required
             />
-          </Field>
-          <Field label="Hora">
+          </FormField>
+          <FormField label="Hora">
             <input
               type="time"
               step={1}
@@ -292,8 +293,8 @@ export function TransactionModal({
               onChange={(e) => setForm({ ...form, transaction_time: e.target.value })}
               className="input-field"
             />
-          </Field>
-          <Field label="Monto (S/)">
+          </FormField>
+          <FormField label="Monto (S/)">
             <input
               type="number"
               step="0.01"
@@ -303,8 +304,8 @@ export function TransactionModal({
               placeholder="0.00"
               required
             />
-          </Field>
-          <Field label="Banco">
+          </FormField>
+          <FormField label="Banco">
             <select
               value={form.bank}
               onChange={(e) => setForm({ ...form, bank: e.target.value })}
@@ -317,8 +318,8 @@ export function TransactionModal({
                 </option>
               ))}
             </select>
-          </Field>
-          <Field label="Tipo de pago">
+          </FormField>
+          <FormField label="Tipo de pago">
             <select
               value={form.payment_type}
               onChange={(e) => setForm({ ...form, payment_type: e.target.value })}
@@ -331,8 +332,8 @@ export function TransactionModal({
                 </option>
               ))}
             </select>
-          </Field>
-          <Field label="Categoría">
+          </FormField>
+          <FormField label="Categoría">
             <select
               value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -344,8 +345,8 @@ export function TransactionModal({
                 </option>
               ))}
             </select>
-          </Field>
-          <Field label="N° operación">
+          </FormField>
+          <FormField label="N° operación">
             <input
               type="text"
               value={form.operation_number}
@@ -353,8 +354,8 @@ export function TransactionModal({
               className="input-field"
               placeholder="Num. operación"
             />
-          </Field>
-          <Field label="Concepto">
+          </FormField>
+          <FormField label="Concepto">
             <input
               type="text"
               value={form.concept}
@@ -363,8 +364,8 @@ export function TransactionModal({
               placeholder="Ej: Pago de servicios"
               required
             />
-          </Field>
-          <Field label="Destinatario" className="md:col-span-2">
+          </FormField>
+          <FormField label="Destinatario" className="md:col-span-2">
             <input
               type="text"
               value={form.recipient}
@@ -372,9 +373,9 @@ export function TransactionModal({
               className="input-field"
               placeholder="Nombre o entidad"
             />
-          </Field>
+          </FormField>
           {form.movement_type === 'Ingreso' && receivableLoans.length > 0 && (
-            <Field label="Vincular cobro (me deben)">
+            <FormField label="Vincular cobro (me deben)">
               <select
                 value={form.loan_record_id}
                 onChange={(e) =>
@@ -393,11 +394,11 @@ export function TransactionModal({
                   </option>
                 ))}
               </select>
-            </Field>
+            </FormField>
           )}
           {form.movement_type === 'Egreso' && (
             <>
-              <Field label="Vincular a meta de ahorro">
+              <FormField label="Vincular a meta de ahorro">
                 <select
                   value={form.savings_goal_id}
                   onChange={(e) =>
@@ -416,9 +417,9 @@ export function TransactionModal({
                     </option>
                   ))}
                 </select>
-              </Field>
+              </FormField>
               {(payableLoans.length > 0 || receivableLoans.length > 0) && (
-                <Field label="Vincular crédito">
+                <FormField label="Vincular crédito">
                   <select
                     value={form.loan_record_id}
                     onChange={(e) =>
@@ -450,40 +451,23 @@ export function TransactionModal({
                       </optgroup>
                     )}
                   </select>
-                </Field>
+                </FormField>
               )}
             </>
           )}
         </div>
 
-        {error && <p className="alert-error">{error}</p>}
+        {error && <p className="alert-error rounded-lg px-3 py-2 text-sm">{error}</p>}
 
-        <div className="modal-actions -mx-5 -mb-4 mt-2">
+        <ModalFormActions>
           <button type="button" onClick={onClose} className="btn-secondary" disabled={isPending}>
             Cancelar
           </button>
           <button type="submit" className="btn-primary" disabled={isPending}>
             {isPending ? 'Guardando...' : isEditing ? 'Guardar cambios' : 'Guardar transacción'}
           </button>
-        </div>
+        </ModalFormActions>
       </form>
     </Modal>
-  )
-}
-
-function Field({
-  label,
-  children,
-  className = '',
-}: {
-  label: string
-  children: React.ReactNode
-  className?: string
-}) {
-  return (
-    <label className={`block space-y-1 text-sm ${className}`}>
-      <span className="font-medium">{label}</span>
-      {children}
-    </label>
   )
 }

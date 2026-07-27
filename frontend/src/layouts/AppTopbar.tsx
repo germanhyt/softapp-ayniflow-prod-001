@@ -38,14 +38,13 @@ export function AppTopbar() {
             <PanelLeftClose size={20} />
           )}
         </button>
-        <div className="hidden">
-          <p className="text-xs uppercase tracking-wide text-muted">Panel administrativo</p>
-          <p className="text-sm font-semibold">{APP_NAME}</p>
-        </div>
+        <p className="text-sm font-semibold tracking-tight lg:hidden">{APP_NAME}</p>
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="hidden text-sm text-muted md:inline">{user?.full_name ?? user?.username}</span>
+        <span className="topbar-user-chip">
+          <strong>{user?.full_name ?? user?.username ?? '—'}</strong>
+        </span>
         {canReadFinance && <LiveStatusBadge />}
         {canReadFinance && <NotificationBell />}
         <PwaInstallButton />

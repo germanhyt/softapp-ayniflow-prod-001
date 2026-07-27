@@ -2,6 +2,7 @@ import { ArrowLeft, Check, Shield } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { Modal } from '../../../../core/components/Modal'
+import { ModalFormActions } from '../../../../core/components/FormField'
 import { ensureArray } from '../../../../core/utils/collections'
 import { alertError, alertSuccess } from '../../../../core/utils/alerts'
 import { getApiErrorMessage } from '../../../../core/utils/apiError'
@@ -34,13 +35,7 @@ function PermissionCheckbox({
       type="button"
       onClick={onToggle}
       disabled={disabled}
-      className="flex w-full items-start gap-3 rounded-xl border px-3 py-3 text-left transition-colors"
-      style={{
-        borderColor: checked ? 'rgba(var(--premium-primary-rgb), 0.45)' : 'var(--premium-border)',
-        backgroundColor: checked
-          ? 'rgba(var(--premium-primary-rgb), 0.08)'
-          : 'var(--premium-surface-high)',
-      }}
+      className={`permission-card ${checked ? 'permission-card--checked' : 'permission-card--unchecked'}`}
       aria-pressed={checked}
     >
       <span
@@ -67,11 +62,13 @@ function PermissionCheckbox({
 function RolePermissionsEditor({
   role,
   allPermissions,
+  permissionsLoading,
   canEdit,
   onBack,
 }: {
   role: Role
   allPermissions: Permission[]
+  permissionsLoading?: boolean
   canEdit: boolean
   onBack: () => void
 }) {
@@ -166,7 +163,13 @@ function RolePermissionsEditor({
       </div>
 
       {canEdit ? (
-        allPermissions.length ? (
+        permissionsLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="skeleton h-14 w-full rounded-xl" />
+            ))}
+          </div>
+        ) : allPermissions.length ? (
           <div className="grid max-h-[50vh] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
             {allPermissions.map((permission) => (
               <PermissionCheckbox
@@ -179,7 +182,7 @@ function RolePermissionsEditor({
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted">Cargando permisos...</p>
+          <p className="text-sm text-muted">No hay permisos disponibles en el catálogo.</p>
         )
       ) : (
         <div className="flex flex-wrap gap-2">
@@ -197,7 +200,7 @@ function RolePermissionsEditor({
 
       {error && <p className="alert-error">{error}</p>}
 
-      <div className="modal-actions -mx-5 -mb-4 mt-4">
+      <ModalFormActions className="mt-4">
         <button
           type="button"
           onClick={onBack}
@@ -216,7 +219,7 @@ function RolePermissionsEditor({
             {updateRolePermissions.isPending ? 'Guardando...' : 'Guardar permisos'}
           </button>
         )}
-      </div>
+      </ModalFormActions>
     </div>
   )
 }
@@ -254,6 +257,7 @@ export function RolesInfoModal({ isOpen, onClose, roles, canEdit = false }: Role
           key={selectedRole.id}
           role={selectedRole}
           allPermissions={allPermissions}
+          permissionsLoading={permissionsLoading}
           canEdit={canEdit}
           onBack={() => setSelectedRoleId(null)}
         />
@@ -274,20 +278,10 @@ export function RolesInfoModal({ isOpen, onClose, roles, canEdit = false }: Role
                 {safeRoles.map((role) => {
                   const permissionCount = ensureArray<Permission>(role.permissions).length
                   return (
-                    <div
-                      key={role.id}
-                      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 rounded-xl border px-4 py-3"
-                      style={{
-                        borderColor: 'var(--premium-border)',
-                        backgroundColor: 'var(--premium-surface-high)',
-                      }}
-                    >
+                    <div key={role.id} className="role-card">
                       <div className="min-w-0 flex items-start gap-3">
-                        <span
-                          className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                          style={{ backgroundColor: 'rgba(var(--premium-primary-rgb), 0.12)' }}
-                        >
-                          <Shield size={18} className="text-premium-primary" />
+                        <span className="role-card__icon">
+                          <Shield size={18} />
                         </span>
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
@@ -320,11 +314,11 @@ export function RolesInfoModal({ isOpen, onClose, roles, canEdit = false }: Role
             )}
           </div>
 
-          <div className="modal-actions -mx-5 -mb-4 mt-4">
+          <ModalFormActions className="mt-4">
             <button type="button" onClick={handleClose} className="btn-secondary">
               Cerrar
             </button>
-          </div>
+          </ModalFormActions>
         </>
       )}
     </Modal>

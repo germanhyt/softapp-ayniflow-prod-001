@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { Modal } from '../../../../core/components/Modal'
+import { FormField, ModalFormActions } from '../../../../core/components/FormField'
 import { alertError, alertSuccess } from '../../../../core/utils/alerts'
 import { useCreateSavingsGoal, useUpdateSavingsGoal } from '../../application/hooks/useFinance'
 import type { SavingsGoal } from '../../domain/models/finance.types'
@@ -77,7 +78,7 @@ export function SavingsModal({ isOpen, onClose, editing }: SavingsModalProps) {
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Nombre de la meta">
+          <FormField label="Nombre de la meta">
             <input
               className="input-field"
               value={form.name}
@@ -85,16 +86,16 @@ export function SavingsModal({ isOpen, onClose, editing }: SavingsModalProps) {
               placeholder="Ej. Fondo emergencia"
               required
             />
-          </Field>
-          <Field label="Fecha objetivo">
+          </FormField>
+          <FormField label="Fecha objetivo">
             <input
               type="date"
               className="input-field"
               value={form.due_date}
               onChange={(e) => setForm((prev) => ({ ...prev, due_date: e.target.value }))}
             />
-          </Field>
-          <Field label="Objetivo (S/)">
+          </FormField>
+          <FormField label="Objetivo (S/)">
             <input
               type="number"
               step="0.01"
@@ -104,8 +105,8 @@ export function SavingsModal({ isOpen, onClose, editing }: SavingsModalProps) {
               onChange={(e) => setForm((prev) => ({ ...prev, target_amount: e.target.value }))}
               required
             />
-          </Field>
-          <Field label="Acumulado (S/)">
+          </FormField>
+          <FormField label="Acumulado (S/)">
             <input
               type="number"
               step="0.01"
@@ -115,9 +116,9 @@ export function SavingsModal({ isOpen, onClose, editing }: SavingsModalProps) {
               onChange={(e) => setForm((prev) => ({ ...prev, current_amount: e.target.value }))}
               required
             />
-          </Field>
+          </FormField>
         </div>
-        <Field label="Notas">
+        <FormField label="Notas">
           <textarea
             className="input-field"
             rows={3}
@@ -125,26 +126,17 @@ export function SavingsModal({ isOpen, onClose, editing }: SavingsModalProps) {
             onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
             placeholder="Opcional"
           />
-        </Field>
-        {error && <p className="alert-error">{error}</p>}
-        <div className="modal-actions -mx-5 -mb-4 mt-2">
+        </FormField>
+        {error && <p className="alert-error rounded-lg px-3 py-2 text-sm">{error}</p>}
+        <ModalFormActions>
           <button type="button" onClick={onClose} className="btn-secondary" disabled={pending}>
             Cancelar
           </button>
           <button type="submit" className="btn-primary" disabled={pending}>
             {pending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Guardar'}
           </button>
-        </div>
+        </ModalFormActions>
       </form>
     </Modal>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block space-y-1 text-sm">
-      <span className="font-medium">{label}</span>
-      {children}
-    </label>
   )
 }

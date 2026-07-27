@@ -60,6 +60,7 @@ Labels de stat: `.stat-summary__label` (uppercase, tracking-wide).
 | `HealthBadge` | `label`, `tone` | ok / riesgo / movimiento |
 | `CategoryChip` | `name`, `color` | Identidad de categoría |
 | `BrandLogo` / `BrandIcon` | — | Marca animada |
+| `FormField` / `ModalFormActions` | labels + footer modal | Formularios en modales |
 | `PageHeader` | `title`, `description?`, `icon?`, `badge?`, `actions?` | Encabezado de módulo |
 | `FilterField` / `FilterPanel` | labels + grid | Filtros de listado |
 | `SegmentTabs` | opciones pill | Tabs Debo/Me deben, presets de periodo |
@@ -85,7 +86,9 @@ Labels de stat: `.stat-summary__label` (uppercase, tracking-wide).
 | `empty-state`, `empty-state__icon` | Sin datos |
 | `skeleton` | Loading pulse |
 | `table-shell`, `table-head`, `table-row` | Tablas desktop |
-| `glass-panel`, `hero-bg` | Login / sidebar |
+| `glass-panel`, `hero-bg`, `auth-card` | Login / sidebar |
+| `sidebar-section-label`, `role-card`, `permission-card` | Navegación y modales auth |
+| `topbar-user-chip` | Identidad en topbar |
 
 ## Patrones de layout
 

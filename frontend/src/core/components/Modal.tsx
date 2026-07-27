@@ -1,11 +1,13 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
+import type { ReactNode } from 'react'
 
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
   title: string
+  subtitle?: ReactNode
   children: React.ReactNode
   size?: 'md' | 'lg' | 'xl'
 }
@@ -13,7 +15,7 @@ interface ModalProps {
 let openModalCount = 0
 const escapeStack: Array<() => void> = []
 
-export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
+export function Modal({ isOpen, onClose, title, subtitle, children, size = 'md' }: ModalProps) {
   useEffect(() => {
     if (!isOpen) return
 
@@ -59,10 +61,13 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
         aria-labelledby="modal-title"
       >
         <div className="modal-header">
-          <h2 id="modal-title" className="text-lg font-semibold">
-            {title}
-          </h2>
-          <button type="button" onClick={onClose} className="btn-icon" aria-label="Cerrar">
+          <div className="min-w-0 flex-1">
+            <h2 id="modal-title" className="modal-header__title">
+              {title}
+            </h2>
+            {subtitle ? <p className="modal-header__subtitle">{subtitle}</p> : null}
+          </div>
+          <button type="button" onClick={onClose} className="btn-icon shrink-0" aria-label="Cerrar">
             <X size={18} />
           </button>
         </div>

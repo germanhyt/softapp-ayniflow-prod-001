@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { CategoryChip } from '../../../../core/components/CategoryChip'
 import { HealthBadge } from '../../../../core/components/HealthBadge'
 import { Modal } from '../../../../core/components/Modal'
+import { ModalFormActions } from '../../../../core/components/FormField'
 import { ProgressBar } from '../../../../core/components/ProgressBar'
 import {
   budgetHealthLabel,
@@ -176,11 +177,11 @@ export function BudgetHealthModal({
           </p>
         )}
 
-        <div className="modal-actions -mx-5 -mb-4 mt-2">
+        <ModalFormActions>
           <button type="button" onClick={onClose} className="btn-primary">
             Cerrar
           </button>
-        </div>
+        </ModalFormActions>
       </div>
     </Modal>
   )

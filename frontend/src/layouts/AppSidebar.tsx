@@ -113,7 +113,7 @@ function FinanceNavGroup({
         />
       </button>
       {expanded && (
-        <div className="ml-3 space-y-1 border-l pl-2" style={{ borderColor: 'var(--premium-border)' }}>
+        <div className="ml-3 space-y-1 border-l pl-2 sidebar-nav-group">
           {subItems.map((item) => (
             <NavLink
               key={item.to}
@@ -175,6 +175,7 @@ export function AppSidebar() {
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+          {!collapsed && <p className="sidebar-section-label">Principal</p>}
           <NavItem
             to="/dashboard"
             icon={LayoutDashboard}
@@ -199,13 +200,16 @@ export function AppSidebar() {
             />
           )}
           {user?.permissions.includes('users:read') && (
-            <NavItem
-              to="/users"
-              icon={Users}
-              label="Usuarios"
-              collapsed={collapsed}
-              onNavigate={isMobile ? closeMobile : undefined}
-            />
+            <>
+              {!collapsed && <p className="sidebar-section-label">Administración</p>}
+              <NavItem
+                to="/users"
+                icon={Users}
+                label="Usuarios"
+                collapsed={collapsed}
+                onNavigate={isMobile ? closeMobile : undefined}
+              />
+            </>
           )}
         </nav>
         <div

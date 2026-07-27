@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { Modal } from './Modal'
+import { ModalFormActions } from './FormField'
 import { openOAuthPopup } from '../utils/openOAuthPopup'
 import {
   isGoogleAuthResultMessage,
@@ -129,7 +130,7 @@ export function GoogleOAuthModal({ isOpen, onClose, onSuccess, onError }: Google
           <p className="alert-error rounded-lg px-3 py-2 text-sm">{errorMessage}</p>
         )}
 
-        <div className="modal-actions -mx-5 -mb-4 mt-2">
+        <ModalFormActions>
           {phase === 'error' ? (
             <>
               <button type="button" onClick={onClose} className="btn-secondary">
@@ -144,7 +145,7 @@ export function GoogleOAuthModal({ isOpen, onClose, onSuccess, onError }: Google
               Cancelar
             </button>
           )}
-        </div>
+        </ModalFormActions>
       </div>
     </Modal>
   )

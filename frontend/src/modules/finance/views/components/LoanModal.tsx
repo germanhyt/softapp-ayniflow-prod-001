@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { Modal } from '../../../../core/components/Modal'
+import { FormField, ModalFormActions } from '../../../../core/components/FormField'
 import { alertError, alertSuccess } from '../../../../core/utils/alerts'
 import { useCreateLoanRecord, useUpdateLoanRecord } from '../../application/hooks/useFinance'
 import { LOAN_COUNTERPARTY_LABELS, LOAN_TYPE_LABELS } from '../../application/utils/loanLabels'
@@ -118,7 +119,7 @@ export function LoanModal({ isOpen, onClose, editing, defaultLoanType = 'payable
       <form onSubmit={handleSubmit} className="space-y-4">
         <p className="text-sm text-muted">{helperText}</p>
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Tipo">
+          <FormField label="Tipo">
             <select
               className="input-field"
               value={form.loan_type}
@@ -133,16 +134,16 @@ export function LoanModal({ isOpen, onClose, editing, defaultLoanType = 'payable
                 </option>
               ))}
             </select>
-          </Field>
-          <Field label={counterpartyLabel}>
+          </FormField>
+          <FormField label={counterpartyLabel}>
             <input
               className="input-field"
               value={form.lender}
               onChange={(e) => setForm((prev) => ({ ...prev, lender: e.target.value }))}
               required
             />
-          </Field>
-          <Field label="Estado">
+          </FormField>
+          <FormField label="Estado">
             <select
               className="input-field"
               value={form.status}
@@ -154,8 +155,8 @@ export function LoanModal({ isOpen, onClose, editing, defaultLoanType = 'payable
                 </option>
               ))}
             </select>
-          </Field>
-          <Field label="Principal (S/)">
+          </FormField>
+          <FormField label="Principal (S/)">
             <input
               type="number"
               step="0.01"
@@ -165,8 +166,8 @@ export function LoanModal({ isOpen, onClose, editing, defaultLoanType = 'payable
               onChange={(e) => setForm((prev) => ({ ...prev, principal_amount: e.target.value }))}
               required
             />
-          </Field>
-          <Field label="Saldo pendiente (S/)">
+          </FormField>
+          <FormField label="Saldo pendiente (S/)">
             <input
               type="number"
               step="0.01"
@@ -176,8 +177,8 @@ export function LoanModal({ isOpen, onClose, editing, defaultLoanType = 'payable
               onChange={(e) => setForm((prev) => ({ ...prev, outstanding_amount: e.target.value }))}
               required
             />
-          </Field>
-          <Field label="Tasa (%)">
+          </FormField>
+          <FormField label="Tasa (%)">
             <input
               type="number"
               step="0.01"
@@ -187,17 +188,17 @@ export function LoanModal({ isOpen, onClose, editing, defaultLoanType = 'payable
               value={form.interest_rate}
               onChange={(e) => setForm((prev) => ({ ...prev, interest_rate: e.target.value }))}
             />
-          </Field>
-          <Field label="Próximo pago / cobro">
+          </FormField>
+          <FormField label="Próximo pago / cobro">
             <input
               type="date"
               className="input-field"
               value={form.next_payment_date}
               onChange={(e) => setForm((prev) => ({ ...prev, next_payment_date: e.target.value }))}
             />
-          </Field>
+          </FormField>
         </div>
-        <Field label="Notas">
+        <FormField label="Notas">
           <textarea
             className="input-field"
             rows={3}
@@ -205,26 +206,17 @@ export function LoanModal({ isOpen, onClose, editing, defaultLoanType = 'payable
             onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
             placeholder="Opcional"
           />
-        </Field>
-        {error && <p className="alert-error">{error}</p>}
-        <div className="modal-actions -mx-5 -mb-4 mt-2">
+        </FormField>
+        {error && <p className="alert-error rounded-lg px-3 py-2 text-sm">{error}</p>}
+        <ModalFormActions>
           <button type="button" onClick={onClose} className="btn-secondary" disabled={pending}>
             Cancelar
           </button>
           <button type="submit" className="btn-primary" disabled={pending}>
             {pending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Guardar'}
           </button>
-        </div>
+        </ModalFormActions>
       </form>
     </Modal>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block space-y-1 text-sm">
-      <span className="font-medium">{label}</span>
-      {children}
-    </label>
   )
 }

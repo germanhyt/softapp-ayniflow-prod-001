@@ -2,6 +2,7 @@ import { Wand2 } from 'lucide-react'
 import { useState } from 'react'
 
 import { Modal } from '../../../../core/components/Modal'
+import { ModalFormActions } from '../../../../core/components/FormField'
 import { PasswordInput } from '../../../../core/components/PasswordInput'
 import { ToggleSwitch } from '../../../../core/components/ToggleSwitch'
 import { ensureArray } from '../../../../core/utils/collections'
@@ -202,8 +203,8 @@ function UserForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
-      <div className="grid gap-4 md:grid-cols-2">
+    <form onSubmit={handleSubmit} className="modal-form" autoComplete="off">
+      <div className="modal-form-grid">
         {!isEdit && (
           <>
             <UserFormField label="Email">
@@ -345,9 +346,9 @@ function UserForm({
         )}
       </div>
 
-      {error && <p className="alert-error">{error}</p>}
+      {error && <p className="alert-error rounded-lg px-3 py-2 text-sm">{error}</p>}
 
-      <div className="modal-actions -mx-5 -mb-4 mt-2">
+      <ModalFormActions>
         <button type="button" onClick={onClose} className="btn-secondary" disabled={isPending}>
           Cancelar
         </button>
@@ -364,7 +365,7 @@ function UserForm({
               ? 'Guardar cambios'
               : 'Crear usuario'}
         </button>
-      </div>
+      </ModalFormActions>
     </form>
   )
 }

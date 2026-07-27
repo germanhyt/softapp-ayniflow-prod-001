@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { Modal } from '../../../../core/components/Modal'
+import { FormField, ModalFormActions } from '../../../../core/components/FormField'
 import { alertError, alertSuccess } from '../../../../core/utils/alerts'
 import { useCreateBudget, useUpdateBudget } from '../../application/hooks/useFinance'
 import type { Budget, CatalogItem } from '../../domain/models/finance.types'
@@ -82,8 +83,8 @@ export function BudgetModal({
       title={isEditing ? 'Editar presupuesto' : 'Nuevo presupuesto'}
       size="md"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Mes">
+      <form onSubmit={handleSubmit} className="modal-form">
+        <FormField label="Mes">
           <input
             type="month"
             value={form.month_year}
@@ -91,8 +92,8 @@ export function BudgetModal({
             className="input-field"
             required
           />
-        </Field>
-        <Field label="Categoría">
+        </FormField>
+        <FormField label="Categoría">
           <select
             value={form.category}
             onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
@@ -106,8 +107,8 @@ export function BudgetModal({
               </option>
             ))}
           </select>
-        </Field>
-        <Field label="Monto presupuestado">
+        </FormField>
+        <FormField label="Monto presupuestado">
           <input
             type="number"
             step="0.01"
@@ -117,26 +118,17 @@ export function BudgetModal({
             className="input-field"
             required
           />
-        </Field>
-        {error && <p className="alert-error">{error}</p>}
-        <div className="modal-actions -mx-5 -mb-4 mt-2">
+        </FormField>
+        {error && <p className="alert-error rounded-lg px-3 py-2 text-sm">{error}</p>}
+        <ModalFormActions>
           <button type="button" onClick={onClose} className="btn-secondary" disabled={pending}>
             Cancelar
           </button>
           <button type="submit" className="btn-primary" disabled={pending}>
             {pending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Guardar'}
           </button>
-        </div>
+        </ModalFormActions>
       </form>
     </Modal>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block space-y-1 text-sm">
-      <span className="font-medium">{label}</span>
-      {children}
-    </label>
   )
 }
