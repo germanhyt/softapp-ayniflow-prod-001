@@ -75,3 +75,42 @@ export interface MessageResponse {
 export interface UpdateRolePermissionsPayload {
   permission_codes: string[]
 }
+
+export interface UserStatsSummary {
+  total: number
+  active: number
+  inactive: number
+  google_linked: number
+  manual: number
+  registered_this_month: number
+  registered_last_7_days: number
+}
+
+export interface RegistrationByDay {
+  date: string
+  count: number
+}
+
+export interface RoleCount {
+  slug: string
+  name: string
+  count: number
+}
+
+export interface RecentUserStat {
+  id: number
+  username: string
+  email: string
+  role_name: string | null
+  created_at: string | null
+  google_linked: boolean
+  is_active: boolean
+}
+
+export interface UserStats {
+  summary: UserStatsSummary
+  registrations_by_day: RegistrationByDay[]
+  by_role: RoleCount[]
+  recent_users: RecentUserStat[]
+  generated_at: string
+}

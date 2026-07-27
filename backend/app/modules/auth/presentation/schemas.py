@@ -102,3 +102,42 @@ class UpdateUserPasswordResponse(BaseModel):
 
 class UpdateRolePermissionsRequest(BaseModel):
     permission_codes: list[str] = Field(default_factory=list)
+
+
+class UserStatsSummary(BaseModel):
+    total: int
+    active: int
+    inactive: int
+    google_linked: int
+    manual: int
+    registered_this_month: int
+    registered_last_7_days: int
+
+
+class RegistrationByDay(BaseModel):
+    date: str
+    count: int
+
+
+class RoleCount(BaseModel):
+    slug: str
+    name: str
+    count: int
+
+
+class RecentUserStat(BaseModel):
+    id: int
+    username: str
+    email: str
+    role_name: str | None
+    created_at: datetime | None
+    google_linked: bool
+    is_active: bool
+
+
+class UserStatsResponse(BaseModel):
+    summary: UserStatsSummary
+    registrations_by_day: list[RegistrationByDay]
+    by_role: list[RoleCount]
+    recent_users: list[RecentUserStat]
+    generated_at: datetime

@@ -8,12 +8,14 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.modules.auth.application.google_oauth_service import GoogleOAuthService
 from app.modules.auth.application.services import AuthService
+from app.modules.auth.application.user_stats import build_user_stats
 from app.modules.auth.domain.models import User
 from app.modules.auth.infrastructure.repositories import AuthRepository
 from app.modules.auth.presentation.deps import (
     get_auth_service,
     get_current_user,
     require_any_permission,
+    require_any_role,
     require_permission,
     serialize_user,
 )
@@ -33,6 +35,7 @@ from app.modules.auth.presentation.schemas import (
     UpdateUserPasswordResponse,
     UpdateUserRequest,
     UserResponse,
+    UserStatsResponse,
 )
 from app.shared.exceptions import AppException
 
@@ -144,6 +147,15 @@ def remove_my_avatar(
 
 
 users_router = APIRouter(prefix="/users", tags=["users"])
+
+
+@users_router.get("/stats", response_model=UserStatsResponse)
+def user_stats(
+    _: User = Depends(require_any_role("admin")),
+    db: Session = Depends(get_db),
+):
+    repository = AuthRepository(db)
+    return build_user_stats(repository.list_users())
 
 
 @users_router.get("", response_model=list[UserResponse])

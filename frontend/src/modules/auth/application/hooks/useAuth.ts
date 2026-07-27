@@ -12,6 +12,7 @@ import type {
   UpdateUserPasswordPayload,
   UpdateUserPayload,
   User,
+  UserStats,
 } from '../../domain/models/auth.types'
 import {
   changeOwnPasswordRequest,
@@ -20,6 +21,7 @@ import {
   fetchCurrentUser,
   fetchPermissions,
   fetchRoles,
+  fetchUserStats,
   fetchUsers,
   loginRequest,
   removeAvatarRequest,
@@ -64,6 +66,15 @@ export function useUsers() {
   return useQuery<User[]>({
     queryKey: ['users'],
     queryFn: fetchUsers,
+  })
+}
+
+export function useUserStats(enabled = true) {
+  return useQuery<UserStats>({
+    queryKey: ['users', 'stats'],
+    queryFn: fetchUserStats,
+    enabled,
+    staleTime: 60_000,
   })
 }
 
@@ -186,4 +197,8 @@ export function hasAnyPermission(
   codes: string[],
 ): boolean {
   return codes.some((code) => hasPermission(user, code))
+}
+
+export function isAdmin(user: { roles: { slug: string }[] } | undefined): boolean {
+  return Boolean(user?.roles.some((role) => role.slug === 'admin'))
 }

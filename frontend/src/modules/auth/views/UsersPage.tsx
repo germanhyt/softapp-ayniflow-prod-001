@@ -1,4 +1,4 @@
-import { Pencil, Plus, Shield, Trash2, Users } from 'lucide-react'
+import { BarChart3, Pencil, Plus, Shield, Trash2, Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { HealthBadge } from '../../../core/components/HealthBadge'
@@ -9,6 +9,7 @@ import { alertError, alertSuccess, confirmAction } from '../../../core/utils/ale
 import { getApiErrorMessage } from '../../../core/utils/apiError'
 import {
   hasPermission,
+  isAdmin,
   useCurrentUser,
   useDeleteUser,
   useRoles,
@@ -17,6 +18,7 @@ import {
 import type { Role, User } from '../domain/models/auth.types'
 import { RolesInfoModal } from './components/RolesInfoModal'
 import { UserFormModal } from './components/UserFormModal'
+import { UserStatsModal } from './components/UserStatsModal'
 
 export function UsersPage() {
   const { data: currentUser } = useCurrentUser()
@@ -25,6 +27,7 @@ export function UsersPage() {
   const canManage = hasPermission(currentUser, 'users:write')
   const canViewRoles = hasPermission(currentUser, 'roles:read')
   const canEditRoles = hasPermission(currentUser, 'roles:write')
+  const showAdminStats = isAdmin(currentUser)
   const { data: rolesData } = useRoles(canViewRoles || canManage)
   const roles = ensureArray<Role>(rolesData)
   const users = ensureArray<User>(usersData)
@@ -33,6 +36,7 @@ export function UsersPage() {
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [rolesModalOpen, setRolesModalOpen] = useState(false)
+  const [statsModalOpen, setStatsModalOpen] = useState(false)
 
   const stats = useMemo(() => {
     const active = users.filter((u) => u.is_active).length
@@ -83,6 +87,16 @@ export function UsersPage() {
         icon={Users}
         actions={
           <>
+            {showAdminStats && (
+              <button
+                type="button"
+                onClick={() => setStatsModalOpen(true)}
+                className="btn-secondary inline-flex items-center gap-2"
+              >
+                <BarChart3 size={16} />
+                Panel de métricas
+              </button>
+            )}
             {canViewRoles && (
               <button
                 type="button"
@@ -244,6 +258,10 @@ export function UsersPage() {
           roles={roles}
           canEdit={canEditRoles}
         />
+      )}
+
+      {showAdminStats && (
+        <UserStatsModal isOpen={statsModalOpen} onClose={() => setStatsModalOpen(false)} />
       )}
 
       {canManage && (

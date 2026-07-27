@@ -14,6 +14,7 @@ import type {
   UpdateUserPasswordResponse,
   UpdateUserPayload,
   User,
+  UserStats,
 } from '../../domain/models/auth.types'
 
 export async function loginRequest(payload: LoginPayload): Promise<TokenResponse> {
@@ -53,6 +54,11 @@ export async function removeAvatarRequest(): Promise<User> {
 export async function fetchUsers(): Promise<User[]> {
   const { data } = await httpClient.get<User[]>('/users')
   return ensureArray<User>(data)
+}
+
+export async function fetchUserStats(): Promise<UserStats> {
+  const { data } = await httpClient.get<UserStats>('/users/stats')
+  return data
 }
 
 export async function createUserRequest(payload: CreateUserPayload): Promise<User> {
