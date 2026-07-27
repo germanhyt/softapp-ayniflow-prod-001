@@ -1,7 +1,9 @@
-import { Building2, CreditCard, FolderTree, Plus, Tags, Trash2 } from 'lucide-react'
+import { ArrowLeftRight, Building2, CreditCard, FolderTree, Pencil, Plus, Tags, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
+import { CategoryChip } from '../../../core/components/CategoryChip'
+import { HealthBadge } from '../../../core/components/HealthBadge'
 import { PaginationControls } from '../../../core/components/PaginationControls'
 import { hasPermission, useCurrentUser } from '../../auth/application/hooks/useAuth'
 import { alertSuccess, confirmAction } from '../../../core/utils/alerts'
@@ -9,6 +11,7 @@ import { getLoanTypeLabel } from '../application/utils/loanLabels'
 import { useCatalog } from '../application/hooks/useCatalog'
 import { useFinanceSocket } from '../application/realtime/FinanceSocketProvider'
 import { normalizeTransactionFilters } from '../application/realtime/transactionFilters'
+import { colorForCategory } from '../application/utils/chartColors'
 import { formatCurrency, firstDayOfMonthIsoDate, todayIsoDate } from '../application/utils/formatters'
 import {
   useBulkDeleteTransactions,
@@ -82,7 +85,7 @@ export function TransactionsPage() {
     [loanRecords],
   )
 
-  const formatLinkLabel = (tx: (typeof transactions)[number]) => {
+  const formatLinkLabel = (tx: Transaction) => {
     if (tx.savings_goal_id) return `Ahorro #${tx.savings_goal_id}`
     if (!tx.loan_record_id) return '—'
     const loan = loanById.get(tx.loan_record_id)
@@ -167,9 +170,9 @@ export function TransactionsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold">Transacciones</h2>
+          <h2 className="text-xl font-semibold tracking-tight">Transacciones</h2>
           <p className="text-sm text-muted">
-            Registro, filtros y gestión de movimientos financieros.
+            Movimientos del día a día, con categoría y tipo a la vista.
           </p>
         </div>
 
@@ -262,7 +265,7 @@ export function TransactionsPage() {
           <select
             value={bulkCategory}
             onChange={(e) => setBulkCategory(e.target.value)}
-            className="input-field min-w-[180px]"
+            className="input-field min-w-44"
           >
             <option value="">Nueva categoría</option>
             {categories.map((item) => (
@@ -284,7 +287,7 @@ export function TransactionsPage() {
             type="button"
             onClick={handleBulkDelete}
             disabled={bulkDelete.isPending}
-            className="btn-secondary inline-flex items-center gap-2 alert-error"
+            className="btn-secondary alert-error inline-flex items-center gap-2"
           >
             <Trash2 size={16} />
             {bulkDelete.isPending ? 'Eliminando...' : 'Eliminar seleccionadas'}
@@ -292,7 +295,36 @@ export function TransactionsPage() {
         </section>
       )}
 
-      <section className="table-shell">
+      {/* Mobile cards */}
+      <div className="space-y-3 lg:hidden">
+        {txLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="budget-card space-y-3">
+              <div className="skeleton h-5 w-48" />
+              <div className="skeleton h-4 w-32" />
+              <div className="skeleton h-6 w-24" />
+            </div>
+          ))
+        ) : transactions.length ? (
+          transactions.map((tx, index) => (
+            <TransactionCard
+              key={tx.id}
+              tx={tx}
+              color={colorForCategory(tx.category ?? 'Otros', index)}
+              linkLabel={formatLinkLabel(tx)}
+              canWrite={canWrite}
+              selected={selectedIds.includes(tx.id)}
+              onToggleSelect={() => toggleSelectOne(tx.id)}
+              onEdit={() => openEditModal(tx)}
+              onDelete={() => handleDeleteOne(tx.id)}
+            />
+          ))
+        ) : (
+          <EmptyTransactions canWrite={canWrite} onCreate={openCreateModal} />
+        )}
+      </div>
+
+      <section className="table-shell hidden lg:block">
         <table className="min-w-[960px] w-full text-left text-sm">
           <thead className="table-head">
             <tr>
@@ -320,69 +352,116 @@ export function TransactionsPage() {
           <tbody>
             {txLoading ? (
               <tr>
-                <td className="px-4 py-3" colSpan={canWrite ? 10 : 8}>
-                  Cargando...
+                <td className="px-4 py-6" colSpan={canWrite ? 10 : 8}>
+                  <div className="space-y-2">
+                    <div className="skeleton h-4 w-full max-w-md" />
+                    <div className="skeleton h-4 w-full max-w-sm" />
+                  </div>
                 </td>
               </tr>
             ) : transactions.length ? (
-              transactions.map((tx) => (
-                <tr key={tx.id} className="table-row">
-                  {canWrite && (
+              transactions.map((tx, index) => {
+                const isExpense = tx.movement_type === 'Egreso'
+                return (
+                  <tr key={tx.id} className="table-row">
+                    {canWrite && (
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(tx.id)}
+                          onChange={() => toggleSelectOne(tx.id)}
+                          aria-label={`Seleccionar transacción ${tx.id}`}
+                        />
+                      </td>
+                    )}
+                    <td className="px-4 py-3 whitespace-nowrap text-muted">{tx.transaction_date}</td>
                     <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.includes(tx.id)}
-                        onChange={() => toggleSelectOne(tx.id)}
-                        aria-label={`Seleccionar transacción ${tx.id}`}
+                      <HealthBadge
+                        label={tx.movement_type}
+                        tone={isExpense ? 'danger' : 'success'}
                       />
                     </td>
-                  )}
-                  <td className="px-4 py-3">{tx.transaction_date}</td>
-                  <td className="px-4 py-3">{tx.movement_type}</td>
-                  <td className="px-4 py-3">{tx.concept}</td>
-                  <td className="px-4 py-3">{tx.bank}</td>
-                  <td className="px-4 py-3">{tx.payment_type}</td>
-                  <td className="px-4 py-3">{tx.category ?? '—'}</td>
-                  <td className="px-4 py-3">{formatLinkLabel(tx)}</td>
-                  <td className="px-4 py-3">{formatCurrency(tx.amount)}</td>
-                  {canWrite && (
+                    <td className="px-4 py-3 font-medium">{tx.concept}</td>
+                    <td className="px-4 py-3 text-muted">{tx.bank}</td>
+                    <td className="px-4 py-3 text-muted">{tx.payment_type}</td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(tx)}
-                          className="text-sm hover:underline"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteOne(tx.id)}
-                          className="alert-error text-sm hover:underline"
-                        >
-                          Eliminar
-                        </button>
-                      </div>
+                      {tx.category ? (
+                        <CategoryChip
+                          name={tx.category}
+                          color={colorForCategory(tx.category, index)}
+                          size="sm"
+                        />
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
                     </td>
-                  )}
-                </tr>
-              ))
+                    <td className="px-4 py-3 text-muted">{formatLinkLabel(tx)}</td>
+                    <td
+                      className={`px-4 py-3 font-semibold tabular-nums ${
+                        isExpense ? 'text-(--premium-danger)' : 'text-premium-primary'
+                      }`}
+                    >
+                      {isExpense ? '−' : '+'}
+                      {formatCurrency(tx.amount)}
+                    </td>
+                    {canWrite && (
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(tx)}
+                            className="btn-ghost inline-flex items-center gap-1"
+                          >
+                            <Pencil size={14} />
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteOne(tx.id)}
+                            className="btn-ghost inline-flex items-center gap-1 text-(--premium-danger)"
+                          >
+                            <Trash2 size={14} />
+                            Eliminar
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                )
+              })
             ) : (
               <tr>
-                <td className="px-4 py-3 text-muted" colSpan={canWrite ? 10 : 8}>
-                  No hay transacciones para los filtros seleccionados.
+                <td className="px-4 py-3" colSpan={canWrite ? 10 : 8}>
+                  <EmptyTransactions canWrite={canWrite} onCreate={openCreateModal} />
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-        <PaginationControls
-          meta={meta}
-          pageSize={pageSize}
-          onPageChange={(page) => setFilters((prev) => ({ ...prev, page }))}
-          onPageSizeChange={(size) => setFilters((prev) => ({ ...prev, page_size: size, page: 1 }))}
-        />
+        {(transactions.length > 0 || txLoading) && (
+          <PaginationControls
+            meta={meta}
+            pageSize={pageSize}
+            onPageChange={(page) => setFilters((prev) => ({ ...prev, page }))}
+            onPageSizeChange={(size) =>
+              setFilters((prev) => ({ ...prev, page_size: size, page: 1 }))
+            }
+          />
+        )}
       </section>
+
+      {transactions.length > 0 && !txLoading && (
+        <div className="lg:hidden">
+          <PaginationControls
+            meta={meta}
+            pageSize={pageSize}
+            onPageChange={(page) => setFilters((prev) => ({ ...prev, page }))}
+            onPageSizeChange={(size) =>
+              setFilters((prev) => ({ ...prev, page_size: size, page: 1 }))
+            }
+          />
+        </div>
+      )}
 
       {canWrite && (
         <>
@@ -404,6 +483,111 @@ export function TransactionsPage() {
             />
           )}
         </>
+      )}
+    </div>
+  )
+}
+
+function TransactionCard({
+  tx,
+  color,
+  linkLabel,
+  canWrite,
+  selected,
+  onToggleSelect,
+  onEdit,
+  onDelete,
+}: {
+  tx: Transaction
+  color: string
+  linkLabel: string
+  canWrite: boolean
+  selected: boolean
+  onToggleSelect: () => void
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  const isExpense = tx.movement_type === 'Egreso'
+
+  return (
+    <article className="budget-card space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-2">
+          {canWrite && (
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={selected}
+              onChange={onToggleSelect}
+              aria-label={`Seleccionar transacción ${tx.id}`}
+            />
+          )}
+          <div className="min-w-0">
+            <p className="truncate font-semibold">{tx.concept}</p>
+            <p className="text-xs text-muted">
+              {tx.transaction_date} · {tx.bank} · {tx.payment_type}
+            </p>
+          </div>
+        </div>
+        <HealthBadge label={tx.movement_type} tone={isExpense ? 'danger' : 'success'} />
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        {tx.category ? (
+          <CategoryChip name={tx.category} color={color} size="sm" />
+        ) : (
+          <span className="text-xs text-muted">Sin categoría</span>
+        )}
+        <p
+          className={`text-lg font-semibold tabular-nums ${
+            isExpense ? 'text-(--premium-danger)' : 'text-premium-primary'
+          }`}
+        >
+          {isExpense ? '−' : '+'}
+          {formatCurrency(tx.amount)}
+        </p>
+      </div>
+
+      {linkLabel !== '—' && <p className="text-xs text-muted">{linkLabel}</p>}
+
+      {canWrite && (
+        <div className="flex items-center gap-2 border-t pt-3" style={{ borderColor: 'var(--premium-border)' }}>
+          <button
+            type="button"
+            onClick={onEdit}
+            className="btn-secondary inline-flex flex-1 items-center justify-center gap-1.5"
+          >
+            <Pencil size={14} />
+            Editar
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="btn-ghost inline-flex items-center justify-center gap-1.5 text-(--premium-danger)"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      )}
+    </article>
+  )
+}
+
+function EmptyTransactions({ canWrite, onCreate }: { canWrite: boolean; onCreate: () => void }) {
+  return (
+    <div className="empty-state">
+      <div className="empty-state__icon">
+        <ArrowLeftRight size={28} />
+      </div>
+      <div>
+        <p className="font-medium">Sin transacciones en este rango</p>
+        <p className="mt-1 text-sm text-muted">Ajusta los filtros o registra un nuevo movimiento.</p>
+      </div>
+      {canWrite && (
+        <button type="button" onClick={onCreate} className="btn-primary inline-flex items-center gap-2">
+          <Plus size={16} />
+          Nueva transacción
+        </button>
       )}
     </div>
   )

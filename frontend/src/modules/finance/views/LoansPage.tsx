@@ -1,7 +1,10 @@
-import { Plus } from 'lucide-react'
+import { HandCoins, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
+import { HealthBadge } from '../../../core/components/HealthBadge'
 import { PaginationControls } from '../../../core/components/PaginationControls'
+import { ProgressBar } from '../../../core/components/ProgressBar'
+import { StatSummary } from '../../../core/components/StatSummary'
 import { alertSuccess, confirmAction } from '../../../core/utils/alerts'
 import { hasPermission, useCurrentUser } from '../../auth/application/hooks/useAuth'
 import {
@@ -9,9 +12,7 @@ import {
   useLoanRecords,
   useLoanSummary,
 } from '../application/hooks/useFinance'
-import {
-  getLoanTypeLabel,
-} from '../application/utils/loanLabels'
+import { getLoanTypeLabel } from '../application/utils/loanLabels'
 import { formatCurrency, formatNotesPreview, formatRegisteredAt } from '../application/utils/formatters'
 import type { LoanRecord, LoanType, PageSize } from '../domain/models/finance.types'
 import { LoanModal } from './components/LoanModal'
@@ -37,6 +38,29 @@ const TAB_OPTIONS: { value: '' | LoanType; label: string }[] = [
 
 function getLoanStatusLabel(status: string): string {
   return STATUS_LABELS[status.trim().toLowerCase()] ?? status
+}
+
+function loanStatusTone(status: string): 'success' | 'warning' | 'danger' | 'info' {
+  switch (status.trim().toLowerCase()) {
+    case 'paid':
+      return 'success'
+    case 'overdue':
+      return 'danger'
+    case 'active':
+      return 'info'
+    default:
+      return 'info'
+  }
+}
+
+function loanTypeTone(type: LoanType): 'warning' | 'success' {
+  return type === 'payable' ? 'warning' : 'success'
+}
+
+function paidProgress(percentage: number | string): number {
+  const value = typeof percentage === 'string' ? Number(percentage) : percentage
+  if (!Number.isFinite(value) || value <= 0) return 0
+  return value
 }
 
 export function LoansPage() {
@@ -99,9 +123,9 @@ export function LoansPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold">Préstamos y cobranzas</h2>
+          <h2 className="text-xl font-semibold tracking-tight">Préstamos y cobranzas</h2>
           <p className="text-sm text-muted">
-            Deudas que debes y montos que te deben, con amortización vía transacciones.
+            Deudas y cobros con avance de pago a la vista.
           </p>
         </div>
         {canWrite && (
@@ -112,11 +136,23 @@ export function LoansPage() {
         )}
       </div>
 
-      <section className="grid gap-4 md:grid-cols-4">
-        <Stat title="Total registros" value={String(summary?.loans_count ?? 0)} />
-        <Stat title="Debo (pendiente)" value={formatCurrency(summary?.payable_outstanding_amount ?? 0)} />
-        <Stat title="Me deben (pendiente)" value={formatCurrency(summary?.receivable_outstanding_amount ?? 0)} />
-        <Stat title="Activos" value={String(summary?.active_loans_count ?? 0)} />
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatSummary label="Total registros" value={String(summary?.loans_count ?? 0)} />
+        <StatSummary
+          label="Debo (pendiente)"
+          value={formatCurrency(summary?.payable_outstanding_amount ?? 0)}
+          tone="warning"
+        />
+        <StatSummary
+          label="Me deben (pendiente)"
+          value={formatCurrency(summary?.receivable_outstanding_amount ?? 0)}
+          tone="success"
+        />
+        <StatSummary
+          label="Activos"
+          value={String(summary?.active_loans_count ?? 0)}
+          tone="info"
+        />
       </section>
 
       <div className="flex flex-wrap gap-2">
@@ -160,98 +196,154 @@ export function LoansPage() {
         </FilterField>
       </section>
 
-      <section className="card overflow-x-auto p-0">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr className="table-head">
-              <th className="px-4 py-3 text-left">Registro</th>
-              <th className="px-4 py-3 text-left">Tipo</th>
-              <th className="px-4 py-3 text-left">Contraparte</th>
-              <th className="px-4 py-3 text-left">Principal</th>
-              <th className="px-4 py-3 text-left">Pendiente</th>
-              <th className="px-4 py-3 text-left">Pagado</th>
-              <th className="px-4 py-3 text-left">Tasa</th>
-              <th className="px-4 py-3 text-left">Próx. pago</th>
-              <th className="px-4 py-3 text-left">Estado</th>
-              <th className="px-4 py-3 text-left">Notas</th>
-              <th className="px-4 py-3 text-left">Actualizado</th>
-              {canWrite && <th className="px-4 py-3 text-left">Acciones</th>}
+      <div className="space-y-3 lg:hidden">
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="budget-card space-y-3">
+              <div className="skeleton h-6 w-40" />
+              <div className="skeleton h-2.5 w-full" />
+              <div className="skeleton h-4 w-28" />
+            </div>
+          ))
+        ) : loans.length ? (
+          loans.map((loan) => (
+            <LoanCard
+              key={loan.id}
+              loan={loan}
+              canWrite={canWrite}
+              onEdit={() => openEdit(loan)}
+              onDelete={() => handleDelete(loan)}
+            />
+          ))
+        ) : (
+          <EmptyLoans canWrite={canWrite} onCreate={openCreate} />
+        )}
+      </div>
+
+      <section className="table-shell hidden overflow-x-auto lg:block">
+        <table className="min-w-full text-left text-sm">
+          <thead className="table-head">
+            <tr>
+              <th className="px-4 py-3">Contraparte</th>
+              <th className="px-4 py-3">Tipo</th>
+              <th className="min-w-48 px-4 py-3">Avance pago</th>
+              <th className="px-4 py-3">Principal</th>
+              <th className="px-4 py-3">Pendiente</th>
+              <th className="px-4 py-3">Próx. pago</th>
+              <th className="px-4 py-3">Estado</th>
+              <th className="px-4 py-3 whitespace-nowrap">Actualizado</th>
+              {canWrite && <th className="px-4 py-3">Acciones</th>}
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={canWrite ? 12 : 11} className="px-4 py-8 text-center text-muted">
-                  Cargando...
+                <td className="px-4 py-6" colSpan={canWrite ? 9 : 8}>
+                  <div className="space-y-2">
+                    <div className="skeleton h-4 w-full max-w-md" />
+                    <div className="skeleton h-4 w-full max-w-sm" />
+                  </div>
                 </td>
               </tr>
             ) : loans.length ? (
-              loans.map((loan) => (
-                <tr key={loan.id} className="table-row">
-                  <td className="px-4 py-3 whitespace-nowrap text-muted">
-                    {formatRegisteredAt(loan.created_at)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="badge">{getLoanTypeLabel(loan.loan_type ?? 'payable')}</span>
-                  </td>
-                  <td className="px-4 py-3">{loan.lender}</td>
-                  <td className="px-4 py-3">{formatCurrency(loan.principal_amount)}</td>
-                  <td className="px-4 py-3">{formatCurrency(loan.outstanding_amount)}</td>
-                  <td className="px-4 py-3">
-                    {formatCurrency(loan.paid_amount)} ({loan.paid_percentage}%)
-                  </td>
-                  <td className="px-4 py-3">{loan.interest_rate ? `${loan.interest_rate}%` : '—'}</td>
-                  <td className="px-4 py-3">{loan.next_payment_date ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    <span className="badge">{getLoanStatusLabel(loan.status)}</span>
-                  </td>
-                  <td className="px-4 py-3 max-w-[200px] truncate" title={loan.notes ?? undefined}>
-                    {formatNotesPreview(loan.notes)}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-muted">
-                    {formatRegisteredAt(loan.updated_at)}
-                  </td>
-                  {canWrite && (
+              loans.map((loan) => {
+                const type = loan.loan_type ?? 'payable'
+                const pct = paidProgress(loan.paid_percentage)
+                const statusKey = loan.status.trim().toLowerCase()
+                return (
+                  <tr key={loan.id} className="table-row">
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(loan)}
-                          className="text-sm hover:underline"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(loan)}
-                          className="alert-error text-sm hover:underline"
-                        >
-                          Eliminar
-                        </button>
-                      </div>
+                      <p className="font-medium">{loan.lender}</p>
+                      <p className="text-xs text-muted">{formatRegisteredAt(loan.created_at)}</p>
                     </td>
-                  )}
-                </tr>
-              ))
+                    <td className="px-4 py-3">
+                      <HealthBadge label={getLoanTypeLabel(type)} tone={loanTypeTone(type)} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <ProgressBar
+                        value={pct}
+                        variant={statusKey === 'paid' ? 'ok' : statusKey === 'overdue' ? 'exceeded' : 'primary'}
+                        showLabel
+                        size="lg"
+                      />
+                      <p className="mt-1 text-xs text-muted tabular-nums">
+                        Pagado {formatCurrency(loan.paid_amount)}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3 tabular-nums">{formatCurrency(loan.principal_amount)}</td>
+                    <td className="px-4 py-3 font-medium tabular-nums">
+                      {formatCurrency(loan.outstanding_amount)}
+                    </td>
+                    <td className="px-4 py-3">{loan.next_payment_date ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      <HealthBadge
+                        label={getLoanStatusLabel(loan.status)}
+                        tone={loanStatusTone(loan.status)}
+                      />
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-muted">
+                      {formatRegisteredAt(loan.updated_at)}
+                    </td>
+                    {canWrite && (
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEdit(loan)}
+                            className="btn-ghost inline-flex items-center gap-1"
+                          >
+                            <Pencil size={14} />
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(loan)}
+                            className="btn-ghost inline-flex items-center gap-1 text-(--premium-danger)"
+                          >
+                            <Trash2 size={14} />
+                            Eliminar
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                )
+              })
             ) : (
               <tr>
-                <td colSpan={canWrite ? 12 : 11} className="px-4 py-8 text-center text-muted">
-                  No hay registros para los filtros seleccionados.
+                <td className="px-4 py-3" colSpan={canWrite ? 9 : 8}>
+                  <EmptyLoans canWrite={canWrite} onCreate={openCreate} />
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-        <PaginationControls
-          meta={meta}
-          pageSize={pageSize}
-          onPageChange={setPage}
-          onPageSizeChange={(size) => {
-            setPageSize(size)
-            setPage(1)
-          }}
-        />
+        {(loans.length > 0 || isLoading) && (
+          <PaginationControls
+            meta={meta}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size)
+              setPage(1)
+            }}
+          />
+        )}
       </section>
+
+      {loans.length > 0 && !isLoading && (
+        <div className="lg:hidden">
+          <PaginationControls
+            meta={meta}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size)
+              setPage(1)
+            }}
+          />
+        </div>
+      )}
 
       <LoanModal
         isOpen={modalOpen}
@@ -263,11 +355,105 @@ export function LoansPage() {
   )
 }
 
-function Stat({ title, value }: { title: string; value: string }) {
+function LoanCard({
+  loan,
+  canWrite,
+  onEdit,
+  onDelete,
+}: {
+  loan: LoanRecord
+  canWrite: boolean
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  const type = loan.loan_type ?? 'payable'
+  const pct = paidProgress(loan.paid_percentage)
+  const statusKey = loan.status.trim().toLowerCase()
+
   return (
-    <div className="card">
-      <p className="text-xs uppercase tracking-wide text-muted">{title}</p>
-      <p className="mt-1 text-lg font-semibold">{value}</p>
+    <article className="budget-card space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate font-semibold">{loan.lender}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <HealthBadge label={getLoanTypeLabel(type)} tone={loanTypeTone(type)} />
+            <HealthBadge
+              label={getLoanStatusLabel(loan.status)}
+              tone={loanStatusTone(loan.status)}
+            />
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-muted">Pendiente</p>
+          <p className="font-semibold tabular-nums">{formatCurrency(loan.outstanding_amount)}</p>
+        </div>
+      </div>
+
+      <ProgressBar
+        value={pct}
+        variant={statusKey === 'paid' ? 'ok' : statusKey === 'overdue' ? 'exceeded' : 'primary'}
+        showLabel
+        size="lg"
+      />
+
+      <div className="grid grid-cols-3 gap-2 text-sm">
+        <div>
+          <p className="text-xs text-muted">Principal</p>
+          <p className="font-medium tabular-nums">{formatCurrency(loan.principal_amount)}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted">Pagado</p>
+          <p className="font-medium tabular-nums">{formatCurrency(loan.paid_amount)}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-muted">Próx.</p>
+          <p className="font-medium">{loan.next_payment_date ?? '—'}</p>
+        </div>
+      </div>
+
+      {loan.notes ? (
+        <p className="line-clamp-2 text-xs text-muted">{formatNotesPreview(loan.notes)}</p>
+      ) : null}
+
+      {canWrite && (
+        <div className="flex items-center gap-2 border-t pt-3" style={{ borderColor: 'var(--premium-border)' }}>
+          <button
+            type="button"
+            onClick={onEdit}
+            className="btn-secondary inline-flex flex-1 items-center justify-center gap-1.5"
+          >
+            <Pencil size={14} />
+            Editar
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="btn-ghost inline-flex items-center justify-center gap-1.5 text-(--premium-danger)"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      )}
+    </article>
+  )
+}
+
+function EmptyLoans({ canWrite, onCreate }: { canWrite: boolean; onCreate: () => void }) {
+  return (
+    <div className="empty-state">
+      <div className="empty-state__icon">
+        <HandCoins size={28} />
+      </div>
+      <div>
+        <p className="font-medium">Sin registros de crédito</p>
+        <p className="mt-1 text-sm text-muted">Registra lo que debes o lo que te deben.</p>
+      </div>
+      {canWrite && (
+        <button type="button" onClick={onCreate} className="btn-primary inline-flex items-center gap-2">
+          <Plus size={16} />
+          Nuevo registro
+        </button>
+      )}
     </div>
   )
 }

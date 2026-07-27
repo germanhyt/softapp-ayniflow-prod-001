@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { ShieldAlert } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 
+import { HealthBadge } from '../../../core/components/HealthBadge'
+import { ProgressBar } from '../../../core/components/ProgressBar'
+import { StatSummary } from '../../../core/components/StatSummary'
 import { ToggleSwitch } from '../../../core/components/ToggleSwitch'
 import { alertError, alertSuccess, confirmAction } from '../../../core/utils/alerts'
 import { getApiErrorMessage } from '../../../core/utils/apiError'
@@ -36,11 +40,15 @@ function StatusCard({
   configured: boolean
 }) {
   return (
-    <article className={`integration-status-card${configured ? ' configured' : ''}`}>
-      <div className="mb-2 flex items-center gap-2">
+    <article className={`budget-card space-y-2 !rounded-xl !p-4 ${configured ? 'stat-summary--success' : ''}`}>
+      <div className="flex items-center gap-2">
         <span className={`integration-dot ${configured ? 'on' : 'off'}`} />
         <h4 className="font-medium">{label}</h4>
-        <span className="ml-auto text-xs text-muted">{configured ? 'Configurado' : 'Pendiente'}</span>
+        <HealthBadge
+          className="ml-auto"
+          label={configured ? 'Configurado' : 'Pendiente'}
+          tone={configured ? 'success' : 'warning'}
+        />
       </div>
       <p className="text-sm text-muted">{description}</p>
     </article>
@@ -347,13 +355,24 @@ export function IntegrationsPage() {
   }
 
   if (!canAccess) {
-    return <p className="text-sm text-muted">No tienes permisos para ver integraciones.</p>
+    return (
+      <div className="empty-state">
+        <div className="empty-state__icon">
+          <ShieldAlert size={28} />
+        </div>
+        <p className="text-sm text-muted">No tienes permisos para ver integraciones.</p>
+      </div>
+    )
   }
+
+  const configuredCount = status ? Object.values(status).filter((item) => item.configured).length : 0
+  const totalCount = status ? Object.keys(status).length : 0
+  const configPct = totalCount > 0 ? Math.round((configuredCount / totalCount) * 100) : 0
 
   return (
     <div className="integrations-page space-y-6">
       <div>
-        <h2 className="text-xl font-semibold">Integraciones</h2>
+        <h2 className="text-xl font-semibold tracking-tight">Integraciones</h2>
         <p className="text-sm text-muted">
           {canWrite
             ? 'Activa funciones y ajusta parámetros operativos. Los toggles se guardan al instante; los campos de texto al salir del input.'
@@ -362,8 +381,29 @@ export function IntegrationsPage() {
       </div>
 
       {canWrite && status && (
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <StatSummary label="Configuradas" value={`${configuredCount}/${totalCount}`} tone="success" />
+          <StatSummary label="Progreso" value={`${configPct}%`} tone={configPct >= 100 ? 'success' : 'info'} />
+          <StatSummary
+            label="Gmail"
+            value={status.gmail.configured ? 'Conectado' : 'Pendiente'}
+            tone={status.gmail.configured ? 'success' : 'warning'}
+          />
+          <StatSummary
+            label="Sheets"
+            value={status.google_sheets.configured ? 'Listo' : 'Pendiente'}
+            tone={status.google_sheets.configured ? 'success' : 'warning'}
+          />
+        </section>
+      )}
+
+      {canWrite && status && (
         <section className="card space-y-3">
-          <h3 className="font-medium">Estado de integraciones</h3>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="font-medium">Estado de integraciones</h3>
+            <HealthBadge label={`${configuredCount} activas`} tone="info" />
+          </div>
+          <ProgressBar value={configPct} variant={configPct >= 100 ? 'ok' : 'primary'} showLabel />
           <div className="integration-status-grid">
             <StatusCard {...status.gmail} />
             <StatusCard {...status.google_sheets} />

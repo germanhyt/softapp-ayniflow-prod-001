@@ -106,20 +106,23 @@ Mejorar seguridad, disponibilidad, observabilidad y mantenibilidad.
 
 ### Objetivo
 
-Unificar la experiencia visual del panel con la paleta **Tactical Olive / Night Ops** del portfolio.
+Unificar la experiencia visual del panel: fondos **neutros** (negro en dark, gris/blanco en light) con acentos **Tactical Olive** de AyniFlow. Patrones tipo Spendee (progress, cards, health badges).
 
 ### Entregables
 
 - Tokens CSS `--premium-*` y utilidades Tailwind v4 (`@theme`).
 - `ThemeProvider` con toggle claro/oscuro persistente.
-- Componentes de layout y clases reutilizables (`btn-primary`, `input-field`, `card`, `nav-link`, etc.).
-- Refactor visual de login, dashboard, finanzas y usuarios.
+- Componentes React: `StatSummary`, `ProgressBar`, `HealthBadge`, `CategoryChip`.
+- Clases reutilizables (`btn-primary`, `budget-card`, `empty-state`, etc.).
+- Documentación: `docs/06-design-system.md`.
+- Refactor visual de auth, finanzas e integraciones.
 
 ### Verificación
 
 - El frontend compila sin errores (`npm run build`).
 - El tema persiste entre recargas (`localStorage`).
-- Todas las vistas usan la paleta olive en lugar de gris/violeta genérico.
+- Dark usa base `#000`; light usa base neutra sin tinte verde.
+- Olive solo en acentos de marca y semántica financiera.
 
 ## Prompt Base para Cursor
 

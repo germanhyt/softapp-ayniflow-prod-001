@@ -11,7 +11,8 @@ Desarrollado por `germ4n.hyt`.
 1. Leer `BORRADOR.md` para entender la intención general.
 2. Revisar `docs/01-producto-y-alcance.md` antes de implementar funcionalidades.
 3. Usar `docs/02-arquitectura.md` como referencia para crear carpetas y capas.
-4. Seguir `docs/05-roadmap-cursor.md` para trabajar por fases en Cursor.
+4. Consultar `docs/06-design-system.md` para tokens, componentes y patrones UI.
+5. Seguir `docs/05-roadmap-cursor.md` para trabajar por fases en Cursor.
 
 ## Levantar el Proyecto
 

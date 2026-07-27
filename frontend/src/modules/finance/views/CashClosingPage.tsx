@@ -11,6 +11,8 @@ import {
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { ProgressBar } from '../../../core/components/ProgressBar'
+import { StatSummary } from '../../../core/components/StatSummary'
 import { useCashClosing, useExportReports } from '../application/hooks/useFinance'
 import {
   daysAgoIsoDate,
@@ -87,10 +89,10 @@ export function CashClosingPage() {
         <div>
           <div className="mb-1 flex items-center gap-2">
             <Calculator size={22} className="text-premium-primary" />
-            <h2 className="text-xl font-semibold">Cierre de caja</h2>
+            <h2 className="text-xl font-semibold tracking-tight">Cierre de caja</h2>
           </div>
           <p className="text-sm text-muted">
-            Cuadre del periodo con ingresos, egresos, balance y desglose operativo.
+            Cuadre del periodo: ingresos, egresos y resultado de un vistazo.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -163,98 +165,105 @@ export function CashClosingPage() {
       </section>
 
       {invalidRange ? null : isLoading ? (
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="card animate-pulse">
-              <div className="mb-2 h-4 w-24 rounded" style={{ backgroundColor: 'var(--premium-border)' }} />
-              <div className="h-8 w-32 rounded" style={{ backgroundColor: 'var(--premium-border)' }} />
+            <div key={index} className="stat-summary space-y-3">
+              <div className="skeleton h-3 w-24" />
+              <div className="skeleton h-7 w-32" />
             </div>
           ))}
         </section>
       ) : data ? (
         <>
           <section
-            className={`card border-l-4 ${
-              balanceValue >= 0 ? 'stat-card-balance' : 'stat-card-expense'
+            className={`stat-summary border-l-4 ${
+              balanceValue >= 0 ? 'stat-summary--success' : 'stat-summary--danger'
             }`}
             style={{
-              borderLeftColor: balanceValue >= 0 ? 'var(--premium-primary)' : 'var(--premium-danger)',
+              borderLeftColor:
+                balanceValue >= 0 ? 'var(--premium-success)' : 'var(--premium-danger)',
             }}
           >
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="flex items-center gap-2 text-sm text-muted">
-                  <Scale size={16} />
+                <p className="stat-summary__label flex items-center gap-2">
+                  <Scale size={14} />
                   Resultado del cierre
                 </p>
-                <p className="mt-1 text-3xl font-semibold">{formatCurrency(data.balance)}</p>
+                <p className="stat-summary__value text-3xl">{formatCurrency(data.balance)}</p>
                 <p className="mt-1 text-sm text-muted">
                   {balanceValue >= 0 ? 'Superávit en el periodo' : 'Déficit en el periodo'}
                 </p>
               </div>
-              <div className="text-right text-sm">
-                <p className="text-muted">{data.transaction_count} movimiento(s)</p>
-                <p className="text-muted">
+              <div className="text-right text-sm text-muted">
+                <p>{data.transaction_count} movimiento(s)</p>
+                <p>
                   {data.income_count} ingreso(s) · {data.expense_count} egreso(s)
                 </p>
               </div>
             </div>
           </section>
 
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <KpiCard
+          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <StatSummary
               label="Total ingresos"
               value={formatCurrency(data.total_income)}
-              tone="income"
-              icon={<ArrowUpCircle size={18} />}
-              detail={`${data.income_count} operación(es)`}
+              tone="success"
+              hint={
+                <span className="inline-flex items-center gap-1">
+                  <ArrowUpCircle size={12} />
+                  {data.income_count} operación(es)
+                </span>
+              }
             />
-            <KpiCard
+            <StatSummary
               label="Total egresos"
               value={formatCurrency(data.total_expense)}
-              tone="expense"
-              icon={<ArrowDownCircle size={18} />}
-              detail={`${data.expense_count} operación(es)`}
+              tone="danger"
+              hint={
+                <span className="inline-flex items-center gap-1">
+                  <ArrowDownCircle size={12} />
+                  {data.expense_count} operación(es)
+                </span>
+              }
             />
-            <KpiCard
+            <StatSummary
               label="Flujo neto"
               value={formatCurrency(data.balance)}
-              tone="balance"
-              icon={<Scale size={18} />}
-              detail="Ingresos − egresos"
+              tone={balanceValue >= 0 ? 'info' : 'warning'}
+              hint="Ingresos − egresos"
             />
-            <KpiCard
+            <StatSummary
               label="Periodo"
               value={periodLabel}
-              tone="neutral"
-              icon={<CalendarRange size={18} />}
-              detail={`${data.transaction_count} transacciones`}
+              hint={`${data.transaction_count} transacciones`}
             />
           </section>
 
           {flowTotal > 0 && (
             <section className="card space-y-3">
               <h3 className="font-medium">Composición del flujo</h3>
-              <div className="flex h-3 overflow-hidden rounded-full" style={{ backgroundColor: 'var(--premium-border)' }}>
+              <div className="flex h-2.5 overflow-hidden rounded-full" style={{ backgroundColor: 'var(--premium-danger-soft)' }}>
                 <div
-                  className="h-full transition-all"
-                  style={{ width: `${incomeShare}%`, backgroundColor: 'var(--premium-success, #22c55e)' }}
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${incomeShare}%`,
+                    backgroundColor: 'var(--premium-success)',
+                  }}
                   title={`Ingresos ${incomeShare}%`}
-                />
-                <div
-                  className="h-full flex-1 transition-all"
-                  style={{ backgroundColor: 'var(--premium-danger, #ef4444)' }}
-                  title={`Egresos ${100 - incomeShare}%`}
                 />
               </div>
               <div className="flex flex-wrap justify-between gap-2 text-sm">
                 <span className="text-muted">
-                  Ingresos: <strong>{formatCurrency(data.total_income)}</strong> ({incomeShare}%)
+                  Ingresos: <strong className="text-premium-text">{formatCurrency(data.total_income)}</strong>{' '}
+                  ({incomeShare}%)
                 </span>
                 <span className="text-muted">
-                  Egresos: <strong>{formatCurrency(data.total_expense)}</strong> ({100 - incomeShare}%)
+                  Egresos: <strong className="text-premium-text">{formatCurrency(data.total_expense)}</strong>{' '}
+                  ({100 - incomeShare}%)
                 </span>
               </div>
+              <ProgressBar value={incomeShare} variant="ok" showLabel label={`${incomeShare}% ingresos`} />
             </section>
           )}
 
@@ -266,25 +275,23 @@ export function CashClosingPage() {
             <div className="card xl:col-span-2">
               <h3 className="mb-3 font-medium">Por tipo de pago</h3>
               {data.by_payment_type.length ? (
-                <div className="table-shell overflow-x-auto">
-                  <table className="min-w-full text-left text-sm">
-                    <thead className="table-head">
-                      <tr>
-                        <th className="px-3 py-2">Tipo</th>
-                        <th className="px-3 py-2">Monto</th>
-                        <th className="px-3 py-2">Ops.</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.by_payment_type.map((item) => (
-                        <tr key={item.payment_type} className="table-row">
-                          <td className="px-3 py-2">{item.payment_type}</td>
-                          <td className="px-3 py-2">{formatCurrency(item.amount)}</td>
-                          <td className="px-3 py-2 text-muted">{item.count}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="space-y-2">
+                  {data.by_payment_type.map((item) => {
+                    const amount = Number(item.amount)
+                    const share =
+                      expenseTotal + incomeTotal > 0
+                        ? (amount / (expenseTotal + incomeTotal)) * 100
+                        : 0
+                    return (
+                      <div key={item.payment_type} className="budget-card space-y-2 !rounded-xl !p-3">
+                        <div className="flex items-center justify-between gap-2 text-sm">
+                          <p className="font-medium">{item.payment_type}</p>
+                          <p className="tabular-nums font-semibold">{formatCurrency(item.amount)}</p>
+                        </div>
+                        <ProgressBar value={share} variant="primary" showLabel label={`${item.count} ops`} />
+                      </div>
+                    )
+                  })}
                 </div>
               ) : (
                 <p className="text-sm text-muted">Sin movimientos en el periodo.</p>
@@ -293,9 +300,7 @@ export function CashClosingPage() {
           </section>
 
           <section className="card flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted">
-              ¿Necesitas revisar o ajustar movimientos del periodo?
-            </p>
+            <p className="text-sm text-muted">¿Necesitas revisar o ajustar movimientos del periodo?</p>
             <Link
               to="/finance/transactions"
               state={{ from, to }}
@@ -307,7 +312,12 @@ export function CashClosingPage() {
           </section>
         </>
       ) : (
-        <p className="text-sm text-muted">Selecciona un periodo válido para calcular el cierre.</p>
+        <div className="empty-state">
+          <div className="empty-state__icon">
+            <Calculator size={28} />
+          </div>
+          <p className="text-sm text-muted">Selecciona un periodo válido para calcular el cierre.</p>
+        </div>
       )}
     </div>
   )
@@ -330,37 +340,5 @@ function FilterField({
       </span>
       {children}
     </label>
-  )
-}
-
-function KpiCard({
-  label,
-  value,
-  tone,
-  icon,
-  detail,
-}: {
-  label: string
-  value: string
-  tone: 'income' | 'expense' | 'balance' | 'neutral'
-  icon: React.ReactNode
-  detail?: string
-}) {
-  const toneClass = {
-    income: 'stat-card-income',
-    expense: 'stat-card-expense',
-    balance: 'stat-card-balance',
-    neutral: '',
-  }[tone]
-
-  return (
-    <div className={`stat-card ${toneClass}`}>
-      <p className="flex items-center gap-1.5 text-sm text-muted">
-        {icon}
-        {label}
-      </p>
-      <p className="mt-1 text-xl font-semibold">{value}</p>
-      {detail && <p className="mt-1 text-xs text-muted">{detail}</p>}
-    </div>
   )
 }

@@ -1,12 +1,12 @@
 const FALLBACK_PALETTE = [
   'var(--premium-primary)',
   'var(--premium-accent)',
-  '#6366f1',
-  '#14b8a6',
-  '#f59e0b',
-  '#ef4444',
-  '#a855f7',
-  '#64748b',
+  '#6b7c5c',
+  '#4a8f6a',
+  '#5a7d9a',
+  '#b07d3a',
+  '#7a6b9a',
+  '#3d8a8a',
 ]
 
 /** Colores semánticos por medio de pago (Perú: Yape, QR, transferencias, etc.) */
@@ -21,17 +21,17 @@ export const PAYMENT_TYPE_COLORS: Record<string, string> = {
   OTROS: '#94a3b8',
 }
 
-/** Colores por categoría de gasto (alineados al catálogo seed) */
+/** Colores por categoría — tonos suaves compatibles con olive AyniFlow */
 export const CATEGORY_COLORS: Record<string, string> = {
-  Vivienda: '#6366f1',
-  Alimentación: '#22c55e',
-  Transporte: '#3b82f6',
-  Salud: '#ef4444',
-  Servicios: '#f97316',
-  Entretenimiento: '#a855f7',
-  Educación: '#14b8a6',
-  Personal: '#ec4899',
-  Otros: '#94a3b8',
+  Vivienda: '#6b7c5c',
+  Alimentación: '#4a8f6a',
+  Transporte: '#5a7d9a',
+  Salud: '#c45c4a',
+  Servicios: '#b07d3a',
+  Entretenimiento: '#7a6b9a',
+  Educación: '#3d8a8a',
+  Personal: '#9a6b7c',
+  Otros: '#7a8270',
 }
 
 function normalizeKey(value: string): string {

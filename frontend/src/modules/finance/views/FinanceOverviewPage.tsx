@@ -1,21 +1,26 @@
 import { ArrowLeftRight, FileSpreadsheet, FileText, Wallet } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { CategoryChip } from '../../../core/components/CategoryChip'
+import { HealthBadge } from '../../../core/components/HealthBadge'
+import { ProgressBar } from '../../../core/components/ProgressBar'
+import { StatSummary } from '../../../core/components/StatSummary'
 import { ensureArray } from '../../../core/utils/collections'
 import { hasPermission, useCurrentUser } from '../../auth/application/hooks/useAuth'
-import {
-  formatCurrency,
-  currentMonthYear,
-  firstDayOfMonthIsoDate,
-  todayIsoDate,
-} from '../application/utils/formatters'
 import {
   useBudgetHealthBreakdown,
   useExportReports,
   useFinanceSummary,
   useTransactions,
 } from '../application/hooks/useFinance'
+import { colorForCategory } from '../application/utils/chartColors'
+import {
+  formatCurrency,
+  currentMonthYear,
+  firstDayOfMonthIsoDate,
+  todayIsoDate,
+} from '../application/utils/formatters'
 import type { FinanceFilters, MovementType, Transaction } from '../domain/models/finance.types'
 import { BalanceByDayChart } from './components/BalanceByDayChart'
 import { BudgetHealthModal } from './components/BudgetHealthModal'
@@ -33,7 +38,8 @@ export function FinanceOverviewPage() {
     from: firstDayOfMonthIsoDate(),
     to: todayIsoDate(),
   })
-  const monthYear = (filters.from && filters.from.length >= 7 ? filters.from.slice(0, 7) : currentMonthYear())
+  const monthYear =
+    filters.from && filters.from.length >= 7 ? filters.from.slice(0, 7) : currentMonthYear()
 
   const { data: summary, isLoading: summaryLoading } = useFinanceSummary(filters)
   const { data: transactionsData } = useTransactions({ ...filters, page: 1, page_size: 200 })
@@ -46,20 +52,30 @@ export function FinanceOverviewPage() {
     (budgetHealth?.at_risk_count ?? 0) +
     (budgetHealth?.exceeded_count ?? 0)
 
+  const remaining = useMemo(() => {
+    const budgeted = Number(budgetHealth?.total_budgeted ?? 0)
+    const actual = Number(budgetHealth?.total_actual ?? 0)
+    return budgeted - actual
+  }, [budgetHealth])
+
   const openHealthModal = (tab: 'at_risk' | 'exceeded') => {
     setHealthModalTab(tab)
     setHealthModalOpen(true)
   }
-  const categoryRows = ensureArray<{ category: string; amount: string; count: number }>(summary?.by_category)
+  const categoryRows = ensureArray<{ category: string; amount: string; count: number }>(
+    summary?.by_category,
+  )
   const categoryTotal = categoryRows.reduce((sum, row) => sum + Number(row.amount), 0)
+  const recentTx = transactions.slice(0, 8)
+  const balance = Number(summary?.balance ?? 0)
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold">Análisis financiero</h2>
+          <h2 className="text-xl font-semibold tracking-tight">Análisis financiero</h2>
           <p className="text-sm text-muted">
-            Métricas, gráficos y tendencias inspiradas en finanzas-negocio.
+            Resumen visual del mes: balance, salud de presupuestos y hábitos de gasto.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -69,11 +85,19 @@ export function FinanceOverviewPage() {
               Gestionar transacciones
             </Link>
           )}
-          <button type="button" onClick={() => exportExcel(filters)} className="btn-secondary inline-flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => exportExcel(filters)}
+            className="btn-secondary inline-flex items-center gap-2"
+          >
             <FileSpreadsheet size={16} />
             Excel
           </button>
-          <button type="button" onClick={() => exportPdf(filters)} className="btn-secondary inline-flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => exportPdf(filters)}
+            className="btn-secondary inline-flex items-center gap-2"
+          >
             <FileText size={16} />
             PDF
           </button>
@@ -118,20 +142,37 @@ export function FinanceOverviewPage() {
             type="text"
             placeholder="Concepto, destinatario..."
             value={filters.search ?? ''}
-            onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value || undefined }))}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, search: e.target.value || undefined }))
+            }
             className="input-field"
           />
         </FilterField>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Ingresos" value={summaryLoading ? '...' : formatCurrency(summary?.total_income ?? 0)} tone="income" />
-        <StatCard label="Egresos" value={summaryLoading ? '...' : formatCurrency(summary?.total_expense ?? 0)} tone="expense" />
-        <StatCard label="Balance" value={summaryLoading ? '...' : formatCurrency(summary?.balance ?? 0)} tone="balance" />
-        <StatCard label="Transacciones" value={summaryLoading ? '...' : String(summary?.transaction_count ?? 0)} tone="neutral" />
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatSummary
+          label="Ingresos"
+          value={summaryLoading ? '…' : formatCurrency(summary?.total_income ?? 0)}
+          tone="success"
+        />
+        <StatSummary
+          label="Egresos"
+          value={summaryLoading ? '…' : formatCurrency(summary?.total_expense ?? 0)}
+          tone="danger"
+        />
+        <StatSummary
+          label="Balance"
+          value={summaryLoading ? '…' : formatCurrency(balance)}
+          tone={balance >= 0 ? 'info' : 'warning'}
+        />
+        <StatSummary
+          label="Transacciones"
+          value={summaryLoading ? '…' : String(summary?.transaction_count ?? 0)}
+        />
       </section>
 
-      <section className="card space-y-3">
+      <section className="card space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="font-medium">Salud presupuestaria ({monthYear})</h3>
           <Link to="/finance/budgets" className="btn-secondary inline-flex items-center gap-2 text-sm">
@@ -140,30 +181,63 @@ export function FinanceOverviewPage() {
           </Link>
         </div>
         {totalRows > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard label="Presupuestado" value={formatCurrency(budgetHealth?.total_budgeted ?? 0)} tone="neutral" />
-            <StatCard label="Ejecutado" value={formatCurrency(budgetHealth?.total_actual ?? 0)} tone="expense" />
-            <div className="stat-card stat-card-balance">
-              <p className="text-sm text-muted">En riesgo (80–99%)</p>
-              <div className="mt-1 flex items-center justify-between gap-2">
-                <p className="text-xl font-semibold">{budgetHealth?.at_risk_count ?? 0}</p>
-                <button type="button" className="btn-secondary text-xs" onClick={() => openHealthModal('at_risk')}>
-                  Ver detalle
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <StatSummary
+              label="Presupuestado"
+              value={formatCurrency(budgetHealth?.total_budgeted ?? 0)}
+            />
+            <StatSummary
+              label="Ejecutado"
+              value={formatCurrency(budgetHealth?.total_actual ?? 0)}
+              tone="info"
+            />
+            <StatSummary
+              label="Restante"
+              value={formatCurrency(remaining)}
+              tone={remaining < 0 ? 'danger' : 'success'}
+              hint={remaining < 0 ? 'Por encima del plan' : 'Disponible del mes'}
+            />
+            <div className="stat-summary space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <p className="stat-summary__label">En riesgo</p>
+                  <p className="stat-summary__value">{budgetHealth?.at_risk_count ?? 0}</p>
+                </div>
+                <button
+                  type="button"
+                  className="btn-secondary text-xs"
+                  onClick={() => openHealthModal('at_risk')}
+                >
+                  Ver
                 </button>
               </div>
-            </div>
-            <div className="stat-card stat-card-expense">
-              <p className="text-sm text-muted">Excedidos (≥100%)</p>
-              <div className="mt-1 flex items-center justify-between gap-2">
-                <p className="text-xl font-semibold">{budgetHealth?.exceeded_count ?? 0}</p>
-                <button type="button" className="btn-secondary text-xs" onClick={() => openHealthModal('exceeded')}>
-                  Ver detalle
+              <div className="flex items-center justify-between gap-2 border-t pt-3" style={{ borderColor: 'var(--premium-border)' }}>
+                <div>
+                  <p className="stat-summary__label">Excedidos</p>
+                  <p className="stat-summary__value text-(--premium-danger)">
+                    {budgetHealth?.exceeded_count ?? 0}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn-secondary text-xs"
+                  onClick={() => openHealthModal('exceeded')}
+                >
+                  Ver
                 </button>
               </div>
             </div>
           </div>
         ) : (
-          <p className="text-sm text-muted">No hay presupuestos cargados para este mes.</p>
+          <div className="empty-state py-8">
+            <div className="empty-state__icon">
+              <Wallet size={24} />
+            </div>
+            <p className="text-sm text-muted">No hay presupuestos cargados para este mes.</p>
+            <Link to="/finance/budgets" className="btn-secondary text-sm">
+              Ir a presupuestos
+            </Link>
+          </div>
         )}
       </section>
 
@@ -182,23 +256,23 @@ export function FinanceOverviewPage() {
             <CategoryPieChart data={categoryRows} />
             <div className="space-y-2">
               {categoryRows.length ? (
-                categoryRows.slice(0, 8).map((row) => {
+                categoryRows.slice(0, 8).map((row, index) => {
                   const amount = Number(row.amount)
                   const percent = categoryTotal > 0 ? (amount / categoryTotal) * 100 : 0
                   return (
-                    <div
-                      key={row.category}
-                      className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
-                      style={{ borderColor: 'var(--premium-border)' }}
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate font-medium">{row.category}</p>
-                        <p className="text-xs text-muted">{row.count} operaciones</p>
+                    <div key={row.category} className="budget-card space-y-2 !rounded-xl !p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <CategoryChip
+                          name={row.category}
+                          color={colorForCategory(row.category, index)}
+                          size="sm"
+                        />
+                        <div className="text-right">
+                          <p className="text-sm font-semibold tabular-nums">{formatCurrency(amount)}</p>
+                          <p className="text-xs text-muted">{row.count} ops</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium">{formatCurrency(amount)}</p>
-                        <p className="text-xs text-muted">{percent.toFixed(1)}%</p>
-                      </div>
+                      <ProgressBar value={percent} variant="primary" showLabel size="md" />
                     </div>
                   )
                 })
@@ -214,40 +288,62 @@ export function FinanceOverviewPage() {
         </div>
       </section>
 
-      <section className="table-shell">
-        <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: 'var(--premium-border)' }}>
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-2">
           <h3 className="font-medium">Últimas transacciones</h3>
           <Link to="/finance/transactions" className="text-sm text-premium-primary hover:underline">
             Ver todas
           </Link>
         </div>
-        <table className="min-w-full text-left text-sm">
-          <thead className="table-head">
-            <tr>
-              <th className="px-4 py-3">Fecha</th>
-              <th className="px-4 py-3">Movimiento</th>
-              <th className="px-4 py-3">Concepto</th>
-              <th className="px-4 py-3">Monto</th>
-            </tr>
-          </thead>
-          <tbody>
-            {transactions.slice(0, 8).map((tx) => (
-              <tr key={tx.id} className="table-row">
-                <td className="px-4 py-3">{tx.transaction_date}</td>
-                <td className="px-4 py-3">{tx.movement_type}</td>
-                <td className="px-4 py-3">{tx.concept}</td>
-                <td className="px-4 py-3">{formatCurrency(tx.amount)}</td>
-              </tr>
-            ))}
-            {!transactions.length && (
+
+        <div className="space-y-2 lg:hidden">
+          {recentTx.length ? (
+            recentTx.map((tx) => <RecentTxCard key={tx.id} tx={tx} />)
+          ) : (
+            <p className="py-6 text-center text-sm text-muted">
+              No hay transacciones para los filtros seleccionados.
+            </p>
+          )}
+        </div>
+
+        <div className="table-shell hidden lg:block">
+          <table className="min-w-full text-left text-sm">
+            <thead className="table-head">
               <tr>
-                <td className="px-4 py-3 text-muted" colSpan={4}>
-                  No hay transacciones para los filtros seleccionados.
-                </td>
+                <th className="px-4 py-3">Fecha</th>
+                <th className="px-4 py-3">Movimiento</th>
+                <th className="px-4 py-3">Concepto</th>
+                <th className="px-4 py-3">Monto</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {recentTx.map((tx) => (
+                <tr key={tx.id} className="table-row">
+                  <td className="px-4 py-3 whitespace-nowrap text-muted">{tx.transaction_date}</td>
+                  <td className="px-4 py-3">
+                    <MovementBadge type={tx.movement_type} />
+                  </td>
+                  <td className="px-4 py-3">{tx.concept}</td>
+                  <td
+                    className={`px-4 py-3 font-medium tabular-nums ${
+                      tx.movement_type === 'Egreso' ? 'text-(--premium-danger)' : 'text-premium-primary'
+                    }`}
+                  >
+                    {tx.movement_type === 'Egreso' ? '−' : '+'}
+                    {formatCurrency(tx.amount)}
+                  </td>
+                </tr>
+              ))}
+              {!recentTx.length && (
+                <tr>
+                  <td className="px-4 py-6 text-center text-muted" colSpan={4}>
+                    No hay transacciones para los filtros seleccionados.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <BudgetHealthModal
@@ -260,35 +356,44 @@ export function FinanceOverviewPage() {
   )
 }
 
+function RecentTxCard({ tx }: { tx: Transaction }) {
+  const isExpense = tx.movement_type === 'Egreso'
+  return (
+    <article className="budget-card flex items-center justify-between gap-3 !rounded-xl !p-3">
+      <div className="min-w-0">
+        <p className="truncate font-medium">{tx.concept}</p>
+        <div className="mt-1 flex items-center gap-2">
+          <MovementBadge type={tx.movement_type} />
+          <span className="text-xs text-muted">{tx.transaction_date}</span>
+        </div>
+      </div>
+      <p
+        className={`shrink-0 font-semibold tabular-nums ${
+          isExpense ? 'text-(--premium-danger)' : 'text-premium-primary'
+        }`}
+      >
+        {isExpense ? '−' : '+'}
+        {formatCurrency(tx.amount)}
+      </p>
+    </article>
+  )
+}
+
+function MovementBadge({ type }: { type: string }) {
+  const isExpense = type === 'Egreso'
+  return (
+    <HealthBadge
+      label={type}
+      tone={isExpense ? 'danger' : 'success'}
+    />
+  )
+}
+
 function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-1 text-sm">
       <span className="font-medium">{label}</span>
       {children}
     </label>
-  )
-}
-
-function StatCard({
-  label,
-  value,
-  tone,
-}: {
-  label: string
-  value: string
-  tone: 'income' | 'expense' | 'balance' | 'neutral'
-}) {
-  const toneClass = {
-    income: 'stat-card-income',
-    expense: 'stat-card-expense',
-    balance: 'stat-card-balance',
-    neutral: '',
-  }[tone]
-
-  return (
-    <div className={`stat-card ${toneClass}`}>
-      <p className="text-sm text-muted">{label}</p>
-      <p className="mt-1 text-xl font-semibold">{value}</p>
-    </div>
   )
 }

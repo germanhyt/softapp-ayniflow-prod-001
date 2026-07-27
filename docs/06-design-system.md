@@ -1,0 +1,128 @@
+# Design System — AyniFlow
+
+Referencia visual del frontend. Inspirado en patrones **Spendee** (glanceable, progress-first, cards mobile) con identidad **AyniFlow** (olive + tipografía premium).
+
+## Principios
+
+1. **Fondos neutros, marca en acento** — negro/gris en dark, blanco/gris en light. El olive vive en primary, badges y gráficos, no en el canvas.
+2. **Salud a la vista** — presupuestos, ahorros y préstamos muestran barras y badges semánticos (ok / riesgo / excedido).
+3. **Mobile-first en listas** — tablas en desktop (`lg+`), cards en mobile.
+4. **Tokens primero** — cambios globales vía `--premium-*` en `frontend/src/index.css`.
+
+## Paleta
+
+### Marca (ambos temas)
+
+| Token | Light | Dark | Uso |
+|-------|-------|------|-----|
+| `--premium-primary` | `#4b5320` | `#8a9a65` | Botones, links, marca |
+| `--premium-secondary` | `#6e7552` | `#b0bb94` | Hover, gradientes |
+| `--premium-accent` | `#8b995e` | `#a3b876` | Iconos, charts fallback |
+
+### Fondos neutros
+
+| Token | Light | Dark | Uso |
+|-------|-------|------|-----|
+| `--premium-bg` | `#f5f5f5` | `#000000` | Canvas app |
+| `--premium-surface` | `#ffffff` | `#0d0d0d` | Paneles, cards |
+| `--premium-surface-high` | `#ebebeb` | `#1a1a1a` | Inputs, filas hover |
+| `--premium-text` | `#171717` | `#f5f5f5` | Texto principal |
+| `--premium-text-muted` | `#737373` | `#a3a3a3` | Subtítulos, hints |
+| `--premium-border` | `rgba(0,0,0,0.08)` | `rgba(255,255,255,0.08)` | Bordes |
+
+### Semánticos
+
+| Token | Rol |
+|-------|-----|
+| `--premium-success` | En plan, ingresos, completado |
+| `--premium-warning` | Riesgo 80–99%, alertas |
+| `--premium-danger` | Excedido, egresos, errores |
+| `--premium-info` | Neutro informativo |
+
+Cada semántico tiene variante `-soft` (fondo) y `-rgb` (alpha overlays).
+
+## Tipografía
+
+| Rol | Fuente |
+|-----|--------|
+| UI / body | **Manrope** |
+| Wordmark | **Space Grotesk** (`.brand-wordmark`) |
+
+Títulos de página: `text-xl font-semibold tracking-tight`.  
+Labels de stat: `.stat-summary__label` (uppercase, tracking-wide).
+
+## Componentes React (`frontend/src/core/components/`)
+
+| Componente | Props clave | Uso |
+|------------|-------------|-----|
+| `StatSummary` | `label`, `value`, `tone?`, `hint?` | KPIs hero |
+| `ProgressBar` | `value`, `variant?`, `showLabel?` | Presupuesto, ahorro, flujo |
+| `HealthBadge` | `label`, `tone` | ok / riesgo / movimiento |
+| `CategoryChip` | `name`, `color` | Identidad de categoría |
+| `BrandLogo` / `BrandIcon` | — | Marca animada |
+| `Modal`, `ThemeToggle`, `PaginationControls` | — | Shell compartido |
+
+### Utilidades de dominio
+
+- `budgetHealth.ts` — umbrales ok &lt;80%, risk 80–99%, exceeded ≥100%
+- `chartColors.ts` — `CATEGORY_COLORS`, `PAYMENT_TYPE_COLORS`
+
+## Clases CSS (`@layer components` en `index.css`)
+
+| Clase | Descripción |
+|-------|-------------|
+| `btn-primary`, `btn-secondary`, `btn-ghost` | Acciones |
+| `input-field` | Formularios |
+| `card`, `stat-card`, `chart-panel` | Contenedores |
+| `stat-summary`, `stat-summary--success/warning/danger/info` | KPI tiles |
+| `progress-track`, `progress-fill--ok/risk/exceeded` | Barras |
+| `badge`, `badge-success/warning/danger/info` | Pills |
+| `budget-card` | Card estilo Spendee (hover, rounded-2xl) |
+| `category-chip`, `category-chip__swatch` | Chip categoría |
+| `empty-state`, `empty-state__icon` | Sin datos |
+| `skeleton` | Loading pulse |
+| `table-shell`, `table-head`, `table-row` | Tablas desktop |
+| `glass-panel`, `hero-bg` | Login / sidebar |
+
+## Patrones de layout
+
+### Página tipo finanzas
+
+```
+[ Header: título + CTA ]
+[ StatSummary × 3–4 ]
+[ Filtros en .card ]
+[ Cards mobile lg:hidden ]
+[ Tabla desktop hidden lg:block ]
+[ PaginationControls ]
+```
+
+### Breakpoint cards ↔ tabla
+
+- Mobile/tablet: `space-y-3 lg:hidden` con `budget-card`
+- Desktop: `table-shell hidden lg:block`
+
+## Tema claro / oscuro
+
+- `ThemeProvider` — `localStorage` key `ayniflow-theme`, default **dark**
+- Toggle: `ThemeToggle` en topbar y login
+- Clase `.dark` en `<html>` (ver `frontend/index.html`)
+
+## Archivos clave
+
+```
+frontend/src/index.css              ← tokens + clases
+frontend/src/core/theme/ThemeProvider.tsx
+frontend/src/core/components/     ← componentes DS
+frontend/public/logo.svg            ← assets marca
+docs/06-design-system.md            ← este documento
+```
+
+## Verificación rápida
+
+```bash
+cd frontend
+npm run build
+```
+
+Recorrer: `/dashboard`, `/finance/budgets`, `/users`, `/finance/integrations` en dark y light.

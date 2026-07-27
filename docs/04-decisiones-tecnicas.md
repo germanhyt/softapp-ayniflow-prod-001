@@ -7,7 +7,7 @@ Este documento registra decisiones iniciales del stack y evita instalar dependen
 | Área | Decisión |
 |------|----------|
 | Frontend | React 19 + TypeScript |
-| Estilos | Tailwind CSS con soporte `dark/light` |
+| Estilos | Tailwind CSS v4 + tokens `--premium-*` (fondos neutros, acento olive). Ver `docs/06-design-system.md`. |
 | Rutas | React Router DOM |
 | Estado remoto | TanStack React Query |
 | Estado cliente | Zustand solo si el estado compartido lo justifica |

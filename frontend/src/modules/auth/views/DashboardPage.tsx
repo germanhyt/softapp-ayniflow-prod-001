@@ -1,7 +1,5 @@
 import {
-  ArrowDownCircle,
   ArrowLeftRight,
-  ArrowUpCircle,
   BarChart3,
   Calculator,
   CalendarRange,
@@ -12,7 +10,6 @@ import {
   LayoutList,
   PiggyBank,
   Plug,
-  Receipt,
   Scale,
   ShieldCheck,
   Wallet,
@@ -20,8 +17,9 @@ import {
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { hasPermission, useCurrentUser } from '../application/hooks/useAuth'
-import type { Role } from '../domain/models/auth.types'
+import { HealthBadge } from '../../../core/components/HealthBadge'
+import { ProgressBar } from '../../../core/components/ProgressBar'
+import { StatSummary } from '../../../core/components/StatSummary'
 import { ensureArray } from '../../../core/utils/collections'
 import {
   formatCurrency,
@@ -38,10 +36,16 @@ import {
   useLoanSummary,
   useSavingsSummary,
 } from '../../finance/application/hooks/useFinance'
+import {
+  budgetHealthProgressVariant,
+  getBudgetHealthStatus,
+} from '../../finance/application/utils/budgetHealth'
 import { BalanceByDayChart } from '../../finance/views/components/BalanceByDayChart'
 import { BudgetHealthModal } from '../../finance/views/components/BudgetHealthModal'
 import { PaymentTypePieChart } from '../../finance/views/components/PaymentTypePieChart'
 import { CategoryPieChart } from '../../finance/views/components/CategoryPieChart'
+import { hasPermission, useCurrentUser } from '../application/hooks/useAuth'
+import type { Role } from '../domain/models/auth.types'
 
 const QUICK_LINKS = [
   {
@@ -152,15 +156,16 @@ export function DashboardPage() {
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <ProfileChip label="Usuario" value={user?.username ?? '—'} />
-          <ProfileChip
+          <StatSummary label="Usuario" value={user?.username ?? '—'} />
+          <StatSummary
             label="Roles"
             value={ensureArray<Role>(user?.roles).map((r) => r.name).join(', ') || '—'}
           />
-          <ProfileChip label="Permisos" value={String(user?.permissions.length ?? 0)} />
-          <ProfileChip
+          <StatSummary label="Permisos" value={String(user?.permissions.length ?? 0)} tone="info" />
+          <StatSummary
             label="Módulos"
             value={canFinance ? 'Auth + Finanzas' : 'Autenticación'}
+            tone={canFinance ? 'success' : 'neutral'}
           />
         </div>
       </section>
@@ -168,32 +173,32 @@ export function DashboardPage() {
       {canFinance && (
         <>
           {summaryLoading ? (
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="card animate-pulse">
-                  <div className="mb-2 h-4 w-20 rounded" style={{ backgroundColor: 'var(--premium-border)' }} />
-                  <div className="h-8 w-28 rounded" style={{ backgroundColor: 'var(--premium-border)' }} />
+                <div key={i} className="stat-summary space-y-3">
+                  <div className="skeleton h-3 w-20" />
+                  <div className="skeleton h-7 w-28" />
                 </div>
               ))}
             </section>
           ) : (
             <>
               <section
-                className={`card border-l-4 ${
-                  balanceValue >= 0 ? 'stat-card-balance' : 'stat-card-expense'
+                className={`stat-summary border-l-4 ${
+                  balanceValue >= 0 ? 'stat-summary--success' : 'stat-summary--danger'
                 }`}
                 style={{
                   borderLeftColor:
-                    balanceValue >= 0 ? 'var(--premium-primary)' : 'var(--premium-danger)',
+                    balanceValue >= 0 ? 'var(--premium-success)' : 'var(--premium-danger)',
                 }}
               >
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <p className="flex items-center gap-2 text-sm text-muted">
-                      <Scale size={16} />
+                    <p className="stat-summary__label flex items-center gap-2">
+                      <Scale size={14} />
                       Balance del mes
                     </p>
-                    <p className="mt-1 text-3xl font-semibold">{formatCurrency(balanceValue)}</p>
+                    <p className="stat-summary__value text-3xl">{formatCurrency(balanceValue)}</p>
                     <p className="mt-1 text-sm text-muted">
                       {balanceValue >= 0 ? 'Resultado positivo en el periodo' : 'Resultado negativo en el periodo'}
                     </p>
@@ -205,33 +210,24 @@ export function DashboardPage() {
                 </div>
               </section>
 
-              <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <KpiCard
+              <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <StatSummary
                   label="Ingresos"
                   value={formatCurrency(incomeTotal)}
-                  tone="income"
-                  icon={<ArrowUpCircle size={18} />}
-                  detail={`${summary?.transaction_count ?? 0} mov. totales`}
+                  tone="success"
+                  hint={`${summary?.transaction_count ?? 0} mov. totales`}
                 />
-                <KpiCard
-                  label="Egresos"
-                  value={formatCurrency(expenseTotal)}
-                  tone="expense"
-                  icon={<ArrowDownCircle size={18} />}
-                />
-                <KpiCard
+                <StatSummary label="Egresos" value={formatCurrency(expenseTotal)} tone="danger" />
+                <StatSummary
                   label="Transacciones"
                   value={String(summary?.transaction_count ?? 0)}
-                  tone="neutral"
-                  icon={<Receipt size={18} />}
-                  detail="Registradas en el mes"
+                  hint="Registradas en el mes"
                 />
-                <KpiCard
+                <StatSummary
                   label="Integraciones"
                   value={`${configuredIntegrations}/${totalIntegrations}`}
-                  tone="balance"
-                  icon={<Plug size={18} />}
-                  detail="Configuradas y activas"
+                  tone="info"
+                  hint="Configuradas y activas"
                 />
               </section>
 
@@ -247,28 +243,13 @@ export function DashboardPage() {
                       Ir a cierre de caja
                     </Link>
                   </div>
-                  <div
-                    className="flex h-3 overflow-hidden rounded-full"
-                    style={{ backgroundColor: 'var(--premium-border)' }}
-                  >
-                    <div
-                      className="h-full"
-                      style={{
-                        width: `${incomeShare}%`,
-                        backgroundColor: 'var(--premium-primary)',
-                      }}
-                    />
-                    <div
-                      className="h-full flex-1"
-                      style={{ backgroundColor: 'var(--premium-danger)' }}
-                    />
-                  </div>
+                  <ProgressBar value={incomeShare} variant="ok" showLabel label={`${incomeShare}% ingresos`} />
                   <div className="flex flex-wrap justify-between gap-2 text-sm text-muted">
                     <span>
-                      Ingresos <strong>{formatCurrency(incomeTotal)}</strong> ({incomeShare}%)
+                      Ingresos <strong className="text-premium-text">{formatCurrency(incomeTotal)}</strong> ({incomeShare}%)
                     </span>
                     <span>
-                      Egresos <strong>{formatCurrency(expenseTotal)}</strong> ({100 - incomeShare}%)
+                      Egresos <strong className="text-premium-text">{formatCurrency(expenseTotal)}</strong> ({100 - incomeShare}%)
                     </span>
                   </div>
                 </section>
@@ -340,70 +321,41 @@ export function DashboardPage() {
                 <div className="flex flex-1 flex-col space-y-4 text-sm">
                   <p className="text-muted">Mes {monthYear}</p>
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted">Presupuestado</span>
-                      <strong>{formatCurrency(totalBudgeted)}</strong>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted">Ejecutado</span>
-                      <strong>{formatCurrency(totalActual)}</strong>
-                    </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <StatSummary label="Presupuestado" value={formatCurrency(totalBudgeted)} />
+                    <StatSummary label="Ejecutado" value={formatCurrency(totalActual)} tone="info" />
                   </div>
 
                   <div>
-                    <div className="mb-1 flex justify-between">
-                      <span className="text-muted">Uso del presupuesto</span>
-                      <strong
-                        className={
-                          budgetExecutionPct >= 100
-                            ? 'text-[var(--premium-danger)]'
-                            : budgetExecutionPct >= 80
-                              ? 'text-amber-500'
-                              : ''
-                        }
-                      >
-                        {budgetExecutionPct}%
-                      </strong>
-                    </div>
-                    <div
-                      className="h-2.5 overflow-hidden rounded-full"
-                      style={{ backgroundColor: 'var(--premium-border)' }}
-                    >
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${Math.min(budgetExecutionPct, 100)}%`,
-                          backgroundColor:
-                            budgetExecutionPct >= 100
-                              ? 'var(--premium-danger)'
-                              : budgetExecutionPct >= 80
-                                ? '#f59e0b'
-                                : 'var(--premium-primary)',
-                        }}
-                      />
-                    </div>
+                    <ProgressBar
+                      value={budgetExecutionPct}
+                      variant={budgetHealthProgressVariant(getBudgetHealthStatus(budgetExecutionPct))}
+                      showLabel
+                      size="lg"
+                    />
                   </div>
 
                   <div className="mt-auto grid grid-cols-3 gap-2">
-                    <HealthPill label="OK" count={budgetHealth?.ok_count ?? 0} tone="ok" />
-                    <HealthPill
+                    <HealthStat label="OK" count={budgetHealth?.ok_count ?? 0} tone="success" />
+                    <HealthStat
                       label="Riesgo"
                       count={budgetHealth?.at_risk_count ?? 0}
-                      tone="risk"
+                      tone="warning"
                       onClick={() => openHealthModal('at_risk')}
                     />
-                    <HealthPill
+                    <HealthStat
                       label="Excedido"
                       count={budgetHealth?.exceeded_count ?? 0}
-                      tone="exceeded"
+                      tone="danger"
                       onClick={() => openHealthModal('exceeded')}
                     />
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-1 flex-col items-center justify-center gap-2 py-6 text-center">
-                  <LayoutList size={28} className="text-muted opacity-50" />
+                <div className="empty-state py-6">
+                  <div className="empty-state__icon">
+                    <LayoutList size={24} />
+                  </div>
                   <p className="text-sm text-muted">Sin presupuestos para {monthYear}.</p>
                   <Link to="/finance/budgets" className="btn-secondary text-sm">
                     Crear presupuesto
@@ -414,43 +366,53 @@ export function DashboardPage() {
           </section>
 
           <section className="grid gap-4 md:grid-cols-2">
-            <div className="card">
-              <div className="mb-3 flex items-center gap-2">
+            <div className="card space-y-3">
+              <div className="flex items-center gap-2">
                 <PiggyBank size={18} className="text-premium-primary" />
                 <h3 className="font-medium">Ahorros</h3>
               </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <MiniStat label="Metas" value={String(savingsSummary?.goals_count ?? 0)} />
-                <MiniStat
+              <div className="grid grid-cols-2 gap-3">
+                <StatSummary label="Metas" value={String(savingsSummary?.goals_count ?? 0)} />
+                <StatSummary
                   label="Avance global"
                   value={`${savingsSummary?.completion_percentage ?? 0}%`}
+                  tone="success"
                 />
-                <MiniStat
+                <StatSummary
                   label="Objetivo total"
                   value={formatCurrency(savingsSummary?.total_target_amount ?? 0)}
                 />
-                <MiniStat
+                <StatSummary
                   label="Ahorrado"
                   value={formatCurrency(savingsSummary?.total_saved_amount ?? 0)}
+                  tone="info"
                 />
               </div>
-              <Link to="/finance/savings" className="mt-3 inline-block text-sm text-premium-primary hover:underline">
+              <Link to="/finance/savings" className="inline-block text-sm text-premium-primary hover:underline">
                 Gestionar metas →
               </Link>
             </div>
 
-            <div className="card">
-              <div className="mb-3 flex items-center gap-2">
+            <div className="card space-y-3">
+              <div className="flex items-center gap-2">
                 <HandCoins size={18} className="text-premium-primary" />
                 <h3 className="font-medium">Préstamos y cobranzas</h3>
               </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <MiniStat label="Debo" value={formatCurrency(loanSummary?.payable_outstanding_amount ?? 0)} />
-                <MiniStat label="Me deben" value={formatCurrency(loanSummary?.receivable_outstanding_amount ?? 0)} />
-                <MiniStat label="Registros activos" value={String(loanSummary?.active_loans_count ?? 0)} />
-                <MiniStat label="Total registros" value={String(loanSummary?.loans_count ?? 0)} />
+              <div className="grid grid-cols-2 gap-3">
+                <StatSummary
+                  label="Debo"
+                  value={formatCurrency(loanSummary?.payable_outstanding_amount ?? 0)}
+                  tone="warning"
+                />
+                <StatSummary
+                  label="Me deben"
+                  value={formatCurrency(loanSummary?.receivable_outstanding_amount ?? 0)}
+                  tone="success"
+                />
+                <StatSummary label="Activos" value={String(loanSummary?.active_loans_count ?? 0)} tone="info" />
+                <StatSummary label="Total" value={String(loanSummary?.loans_count ?? 0)} />
               </div>
-              <Link to="/finance/loans" className="mt-3 inline-block text-sm text-premium-primary hover:underline">
+              <Link to="/finance/loans" className="inline-block text-sm text-premium-primary hover:underline">
                 Ver créditos →
               </Link>
             </div>
@@ -471,38 +433,25 @@ export function DashboardPage() {
                 </div>
 
                 <div className="mb-3">
-                  <div className="mb-1 flex justify-between text-sm">
-                    <span className="text-muted">Configuración</span>
-                    <strong>
-                      {configuredIntegrations}/{totalIntegrations}
-                    </strong>
-                  </div>
-                  <div
-                    className="h-2 overflow-hidden rounded-full"
-                    style={{ backgroundColor: 'var(--premium-border)' }}
-                  >
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${
-                          totalIntegrations
-                            ? Math.round((configuredIntegrations / totalIntegrations) * 100)
-                            : 0
-                        }%`,
-                        backgroundColor: 'var(--premium-primary)',
-                      }}
-                    />
-                  </div>
+                  <ProgressBar
+                    value={
+                      totalIntegrations
+                        ? Math.round((configuredIntegrations / totalIntegrations) * 100)
+                        : 0
+                    }
+                    variant="primary"
+                    showLabel
+                    label={`${configuredIntegrations}/${totalIntegrations} configuradas`}
+                  />
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(integrationsStatus).map(([key, item]) => (
-                    <span
+                    <HealthBadge
                       key={key}
-                      className={`badge ${item.configured ? '' : 'opacity-60'}`}
-                    >
-                      {item.label}: {item.configured ? 'OK' : 'Pendiente'}
-                    </span>
+                      label={`${item.label}: ${item.configured ? 'OK' : 'Pendiente'}`}
+                      tone={item.configured ? 'success' : 'warning'}
+                    />
                   ))}
                 </div>
 
@@ -516,11 +465,10 @@ export function DashboardPage() {
                         <Clock3 size={15} />
                         Gmail realtime
                       </span>
-                      <span
-                        className={`badge ${gmailPollStatus.realtime_enabled ? '' : 'opacity-60'}`}
-                      >
-                        {gmailPollStatus.realtime_enabled ? 'Activo' : 'Inactivo'}
-                      </span>
+                      <HealthBadge
+                        label={gmailPollStatus.realtime_enabled ? 'Activo' : 'Inactivo'}
+                        tone={gmailPollStatus.realtime_enabled ? 'success' : 'warning'}
+                      />
                     </div>
                     <p className="mt-2 text-muted">
                       Intervalo: <strong>{gmailPollStatus.interval_seconds}s</strong>
@@ -546,8 +494,7 @@ export function DashboardPage() {
                   <Link
                     key={item.to}
                     to={item.to}
-                    className="group flex items-start gap-3 rounded-xl border p-3 transition-all hover:border-[rgba(var(--premium-primary-rgb),0.4)] hover:bg-[rgba(var(--premium-primary-rgb),0.04)]"
-                    style={{ borderColor: 'var(--premium-border)' }}
+                    className="budget-card group flex items-start gap-3 !rounded-xl !p-3 transition-colors"
                   >
                     <span className="rounded-lg p-2 transition-colors group-hover:bg-[rgba(var(--premium-primary-rgb),0.12)]">
                       <item.icon size={18} className="text-premium-primary" />
@@ -579,9 +526,7 @@ export function DashboardPage() {
         {showPermissions && (
           <div className="mt-3 flex flex-wrap gap-2 border-t pt-3" style={{ borderColor: 'var(--premium-border)' }}>
             {ensureArray<string>(user?.permissions).map((permission) => (
-              <span key={permission} className="badge">
-                {permission}
-              </span>
+              <HealthBadge key={permission} label={permission} tone="primary" />
             ))}
           </div>
         )}
@@ -599,62 +544,7 @@ export function DashboardPage() {
   )
 }
 
-function ProfileChip({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      className="rounded-lg px-3 py-2 text-sm"
-      style={{ backgroundColor: 'var(--premium-surface-high)' }}
-    >
-      <p className="text-xs text-muted">{label}</p>
-      <p className="mt-0.5 truncate font-medium" title={value}>
-        {value}
-      </p>
-    </div>
-  )
-}
-
-function KpiCard({
-  label,
-  value,
-  tone,
-  icon,
-  detail,
-}: {
-  label: string
-  value: string
-  tone: 'income' | 'expense' | 'balance' | 'neutral'
-  icon: React.ReactNode
-  detail?: string
-}) {
-  const toneClass = {
-    income: 'stat-card-income',
-    expense: 'stat-card-expense',
-    balance: 'stat-card-balance',
-    neutral: '',
-  }[tone]
-
-  return (
-    <div className={`stat-card ${toneClass}`}>
-      <p className="flex items-center gap-1.5 text-sm text-muted">
-        {icon}
-        {label}
-      </p>
-      <p className="mt-1 text-xl font-semibold">{value}</p>
-      {detail && <p className="mt-1 text-xs text-muted">{detail}</p>}
-    </div>
-  )
-}
-
-function MiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-xs text-muted">{label}</p>
-      <p className="font-medium">{value}</p>
-    </div>
-  )
-}
-
-function HealthPill({
+function HealthStat({
   label,
   count,
   tone,
@@ -662,27 +552,24 @@ function HealthPill({
 }: {
   label: string
   count: number
-  tone: 'ok' | 'risk' | 'exceeded'
+  tone: 'success' | 'warning' | 'danger'
   onClick?: () => void
 }) {
-  const colors = {
-    ok: 'var(--premium-primary)',
-    risk: '#f59e0b',
-    exceeded: 'var(--premium-danger)',
-  }
+  const toneClass = {
+    success: 'stat-summary--success',
+    warning: 'stat-summary--warning',
+    danger: 'stat-summary--danger',
+  }[tone]
   const Tag = onClick ? 'button' : 'div'
 
   return (
     <Tag
       type={onClick ? 'button' : undefined}
       onClick={onClick}
-      className={`rounded-lg border px-2 py-2 text-center ${onClick ? 'transition-opacity hover:opacity-90' : ''}`}
-      style={{ borderColor: 'var(--premium-border)' }}
+      className={`stat-summary px-2 py-2 text-center ${toneClass} ${onClick ? 'transition-opacity hover:opacity-90' : ''}`}
     >
-      <p className="text-xs text-muted">{label}</p>
-      <p className="text-lg font-semibold" style={{ color: colors[tone] }}>
-        {count}
-      </p>
+      <p className="stat-summary__label">{label}</p>
+      <p className="stat-summary__value text-lg">{count}</p>
     </Tag>
   )
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { HealthBadge } from '../../../core/components/HealthBadge'
 import { PasswordInput } from '../../../core/components/PasswordInput'
 import { useLogin } from '../application/hooks/useAuth'
 
@@ -55,10 +56,15 @@ export function LoginPage() {
         />
       </div>
 
-      {error && <p className="alert-error">{error}</p>}
+      {error && (
+        <div className="alert-error rounded-lg px-3 py-2 text-sm">
+          <HealthBadge label="Error" tone="danger" className="mb-2" />
+          {error}
+        </div>
+      )}
 
       <button type="submit" disabled={login.isPending} className="btn-primary w-full">
-        {login.isPending ? 'Ingresando...' : 'Entrar'}
+        {login.isPending ? 'Ingresando…' : 'Entrar'}
       </button>
     </form>
   )
