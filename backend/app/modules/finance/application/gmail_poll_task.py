@@ -72,12 +72,24 @@ async def run_gmail_poll_loop() -> None:
                     scoped = FinanceRepository(db, workspace_id=workspace_id or 1)
                     if not GmailClient.is_configured(scoped.get_gmail_refresh_token()):
                         continue
-                    result = GmailSyncService(scoped).poll_new()
-                    totals["created"] += result["created"]
-                    totals["skipped"] += result["skipped"]
-                    totals["invalid"] += result["invalid"]
-                    totals["total"] += result["total"]
-                    totals["workspaces"] += 1
+                    try:
+                        result = GmailSyncService(scoped).poll_new()
+                        totals["created"] += result["created"]
+                        totals["skipped"] += result["skipped"]
+                        totals["invalid"] += result["invalid"]
+                        totals["total"] += result["total"]
+                        totals["workspaces"] += 1
+                    except Exception as workspace_exc:
+                        try:
+                            db.rollback()
+                        except Exception:
+                            pass
+                        logger.warning(
+                            "Gmail poll falló en workspace %s: %s",
+                            workspace_id,
+                            workspace_exc,
+                        )
+                        _poll_runtime_state["last_error"] = str(workspace_exc)
 
                 _poll_runtime_state["last_result"] = {"status": "ok", **totals}
                 if totals["created"] > 0:

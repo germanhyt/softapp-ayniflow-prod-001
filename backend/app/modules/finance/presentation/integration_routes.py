@@ -11,8 +11,10 @@ from app.core.database import get_db
 from app.shared.datetime_utils import serialize_datetime
 from app.modules.auth.domain.models import User
 from app.modules.auth.presentation.deps import require_any_permission, require_permission
+from app.modules.finance.application.email_extraction_catalog import get_email_extraction_guide
 from app.modules.finance.application.gmail_oauth_service import GmailOAuthService
 from app.modules.finance.application.gmail_poll_task import get_poll_runtime_state
+from app.modules.finance.application.gmail_query import parse_gmail_labels
 from app.modules.finance.application.integration_settings_service import IntegrationSettingsService
 from app.modules.finance.application.gmail_sync_service import GmailSyncService
 from app.modules.finance.application.export_service import FinanceExportService
@@ -27,6 +29,7 @@ from app.modules.finance.infrastructure.legacy_adapter import LegacyFinanzasNego
 from app.modules.finance.infrastructure.repositories import FinanceRepository
 from app.modules.finance.presentation.deps import get_finance_repository
 from app.modules.finance.presentation.schemas import (
+    EmailExtractionGuideResponse,
     GmailConnectionResponse,
     GmailOAuthStartResponse,
     GmailPollStatusResponse,
@@ -234,12 +237,14 @@ def gmail_poll_status(
     settings_service = IntegrationSettingsService(repository)
     refresh_token = repository.get_gmail_refresh_token()
     runtime_state = get_poll_runtime_state()
+    query = settings_service.get_effective_value("gmail_query")
 
     return GmailPollStatusResponse(
         loop_running=True,
         realtime_enabled=settings_service.is_enabled("gmail_realtime", default=False),
         connected=GmailClient.is_configured(refresh_token),
-        query=settings_service.get_effective_value("gmail_query"),
+        query=query,
+        labels=parse_gmail_labels(query),
         interval_seconds=settings_service.get_effective_int(
             "gmail_poll_interval_seconds",
             fallback=settings.gmail_poll_interval_seconds,
@@ -249,6 +254,17 @@ def gmail_poll_status(
         last_result=runtime_state.get("last_result"),
         last_error=runtime_state.get("last_error"),
     )
+
+
+@integrations_router.get(
+    "/integrations/gmail/extraction-guide",
+    response_model=EmailExtractionGuideResponse,
+)
+def gmail_extraction_guide(
+    _: User = Depends(require_permission("integrations:write")),
+):
+    """Documentación de extracción de campos por tipo de correo (solo config avanzada)."""
+    return EmailExtractionGuideResponse(**get_email_extraction_guide())
 
 
 @integrations_router.get("/integrations/gmail/oauth/start", response_model=GmailOAuthStartResponse)

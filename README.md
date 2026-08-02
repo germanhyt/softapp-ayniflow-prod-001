@@ -13,6 +13,7 @@ Desarrollado por `germ4n.hyt`.
 3. Usar `docs/02-arquitectura.md` como referencia para crear carpetas y capas.
 4. Consultar `docs/06-design-system.md` para tokens, componentes y patrones UI.
 5. Seguir `docs/05-roadmap-cursor.md` para trabajar por fases en Cursor.
+6. **Usuarios finales:** leer `docs/08-resumen-usuario.md` (rápido) o `docs/07-guia-usuario.md` (completa).
 
 ## Levantar el Proyecto
 
@@ -151,6 +152,9 @@ El primer entregable debe cubrir finanzas de negocio y usuarios/RBAC. El módulo
 | `docs/03-modulos.md` | Ordena los módulos del sistema y su prioridad. |
 | `docs/04-decisiones-tecnicas.md` | Registra stack, dependencias y criterios técnicos. |
 | `docs/05-roadmap-cursor.md` | Propone fases de trabajo verificables en Cursor. |
+| `docs/06-design-system.md` | Tokens, componentes y patrones UI del frontend. |
+| `docs/07-guia-usuario.md` | **Guía de usuario detallada** (acceso, módulos, finanzas, perfil). |
+| `docs/08-resumen-usuario.md` | **Resumen rápido** para entender AyniFlow en minutos. |
 
 ## Regla de Evolución
 

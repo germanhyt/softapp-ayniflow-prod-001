@@ -1,6 +1,8 @@
 import json
 from typing import Any
 
+from sqlalchemy.exc import IntegrityError
+
 from app.core.logging import logger
 from app.modules.finance.application.integration_service import IntegrationService
 from app.modules.finance.application.integration_settings_service import IntegrationSettingsService
@@ -50,6 +52,12 @@ class GmailSyncService:
             refresh_token=refresh_token,
         )
 
+    def _safe_rollback(self) -> None:
+        try:
+            self.repository.db.rollback()
+        except Exception:
+            pass
+
     def _process_messages(
         self,
         message_ids: list[str],
@@ -81,14 +89,22 @@ class GmailSyncService:
                     if parsed.banco == "PENDIENTE_MAPEO":
                         invalid += 1
                         continue
-                    self._record_processed(message_id, None, None, mode)
-                    invalid += 1
-                    if mark_read:
-                        GmailClient.mark_as_read(message_id, refresh_token=refresh_token)
+                    claimed = self._record_processed(message_id, None, None, mode)
+                    if claimed:
+                        invalid += 1
+                        if mark_read:
+                            GmailClient.mark_as_read(message_id, refresh_token=refresh_token)
+                    else:
+                        skipped += 1
                     continue
 
                 payload = parsed.to_webhook_payload()
                 operation_number = payload.get("num_operacion")
+
+                # Releer dedup justo antes de crear (evita carrera poll/histórico o multi-workspace).
+                if self.repository.get_processed_gmail_message(message_id):
+                    skipped += 1
+                    continue
 
                 if operation_number and self.repository.get_by_operation_number(operation_number):
                     self._record_processed(message_id, operation_number, None, mode)
@@ -97,8 +113,18 @@ class GmailSyncService:
                         GmailClient.mark_as_read(message_id, refresh_token=refresh_token)
                     continue
 
+                # Reclamar el message_id ANTES de crear la transacción (dedup atómico).
+                claimed = self._record_processed(message_id, operation_number, None, mode)
+                if not claimed:
+                    skipped += 1
+                    continue
+
                 mapped = LegacyFinanzasNegocioAdapter.from_legacy_row(payload)
                 transaction = self.repository.create_transaction(mapped)
+
+                # Actualiza el registro con el transaction_id resultante.
+                claimed.transaction_id = transaction.id
+                self.repository.db.commit()
 
                 event = WebhookEvent(
                     source=f"gmail:{mode}",
@@ -132,13 +158,17 @@ class GmailSyncService:
                     )
                     notify_webhook_events_changed(workspace_id=self.repository.workspace_id)
 
-                self._record_processed(message_id, operation_number, transaction.id, mode)
                 created += 1
 
                 if mark_read:
                     GmailClient.mark_as_read(message_id, refresh_token=refresh_token)
 
+            except IntegrityError as exc:
+                self._safe_rollback()
+                logger.info("Correo %s omitido por carrera/duplicado: %s", message_id, exc)
+                skipped += 1
             except Exception as exc:
+                self._safe_rollback()
                 logger.warning("Error procesando correo %s: %s", message_id, exc)
                 invalid += 1
 
@@ -160,11 +190,16 @@ class GmailSyncService:
         operation_number: str | None,
         transaction_id: int | None,
         mode: str,
-    ) -> None:
+    ) -> ProcessedGmailMessage | None:
+        """Intenta reclamar el message_id. None = ya existía (dedup/carrera)."""
+        if self.repository.get_processed_gmail_message(gmail_message_id):
+            return None
+
         record = ProcessedGmailMessage(
             gmail_message_id=gmail_message_id,
             operation_number=operation_number,
             transaction_id=transaction_id,
             sync_mode=mode,
         )
-        self.repository.create_processed_gmail_message(record)
+        saved, created = self.repository.create_processed_gmail_message(record)
+        return saved if created else None

@@ -10,6 +10,7 @@ import {
   usePermissions,
   useUpdateRolePermissions,
 } from '../../application/hooks/useAuth'
+import { permissionLabel } from '../../application/utils/permissionLabels'
 import type { Permission, Role } from '../../domain/models/auth.types'
 
 interface RolesInfoModalProps {
@@ -50,10 +51,10 @@ function PermissionCheckbox({
         <Check size={14} strokeWidth={3} />
       </span>
       <span className="min-w-0">
-        <span className="block text-sm font-medium">{permission.code}</span>
-        {permission.description && (
-          <span className="mt-0.5 block text-xs text-muted">{permission.description}</span>
-        )}
+        <span className="block text-sm font-medium">
+          {permissionLabel(permission.code, permission.description)}
+        </span>
+        <span className="mt-0.5 block font-mono text-xs text-muted">{permission.code}</span>
       </span>
     </button>
   )
@@ -188,8 +189,12 @@ function RolePermissionsEditor({
         <div className="flex flex-wrap gap-2">
           {ensureArray<Permission>(role.permissions).length ? (
             ensureArray<Permission>(role.permissions).map((permission) => (
-              <span key={permission.id} className="badge" title={permission.description ?? undefined}>
-                {permission.code}
+              <span
+                key={permission.id}
+                className="badge"
+                title={permission.code}
+              >
+                {permissionLabel(permission.code, permission.description)}
               </span>
             ))
           ) : (

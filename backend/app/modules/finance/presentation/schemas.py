@@ -350,11 +350,35 @@ class GmailPollStatusResponse(BaseModel):
     realtime_enabled: bool
     connected: bool
     query: str
+    labels: list[str] = []
     interval_seconds: int
     mark_unread_only: bool = True
     last_checked_at: str | None = None
     last_result: dict | None = None
     last_error: str | None = None
+
+
+class EmailExtractionField(BaseModel):
+    field: str
+    source: str
+    required: bool = False
+
+
+class EmailExtractionType(BaseModel):
+    id: str
+    bank: str
+    name: str
+    movement: str
+    tipo_operacion: str
+    subject_patterns: list[str]
+    description: str
+    fields: list[EmailExtractionField]
+
+
+class EmailExtractionGuideResponse(BaseModel):
+    bank_focus: str
+    notes: list[str]
+    types: list[EmailExtractionType]
 
 
 class NotificationResponse(BaseModel):

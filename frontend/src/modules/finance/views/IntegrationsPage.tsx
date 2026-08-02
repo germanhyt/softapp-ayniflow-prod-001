@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { FileSpreadsheet, Mail, Plug, ScanLine, ShieldAlert, Webhook } from 'lucide-react'
+import { BookOpen, FileSpreadsheet, Info, Mail, Plug, ScanLine, ShieldAlert, Webhook } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 
 import { HealthBadge } from '../../../core/components/HealthBadge'
@@ -30,6 +30,9 @@ import {
   useUpdateIntegrationSetting,
 } from '../application/hooks/useFinance'
 import type { IntegrationSettingItem } from '../domain/models/finance.types'
+import { GmailExtractionGuideModal } from './components/GmailExtractionGuideModal'
+import { GmailLabelsEditor } from './components/GmailLabelsEditor'
+import { SheetsMappingModal } from './components/SheetsMappingModal'
 import { isGmailOAuthResultMessage } from './GmailOAuthCallbackPage'
 
 function StatusCard({
@@ -188,6 +191,8 @@ export function IntegrationsPage() {
   const pollGmailNew = usePollGmailNew()
   const [searchParams, setSearchParams] = useSearchParams()
   const [message, setMessage] = useState<string | null>(null)
+  const [sheetsMappingOpen, setSheetsMappingOpen] = useState(false)
+  const [extractionGuideOpen, setExtractionGuideOpen] = useState(false)
 
   const gmailConnected = gmailConnection?.connected ?? status?.gmail.configured ?? false
   const settingsReady = integrationSettings !== undefined
@@ -406,10 +411,10 @@ export function IntegrationsPage() {
           <ProgressBar value={configPct} variant={configPct >= 100 ? 'ok' : 'primary'} showLabel />
           <div className="integration-status-grid">
             <StatusCard {...status.gmail} />
-            <StatusCard {...status.google_sheets} />
-            <StatusCard {...status.gemini_ocr} />
             <StatusCard {...status.webhook_inbound} />
             <StatusCard {...status.webhook_notification} />
+            <StatusCard {...status.gemini_ocr} />
+            <StatusCard {...status.google_sheets} />
           </div>
         </section>
       )}
@@ -426,6 +431,18 @@ export function IntegrationsPage() {
               <HealthBadge label="Pendiente" tone="warning" />
             )
           }
+          headerAction={
+            canWrite ? (
+              <button
+                type="button"
+                onClick={() => setExtractionGuideOpen(true)}
+                className="btn-ghost inline-flex items-center gap-1.5 text-sm"
+              >
+                <BookOpen size={15} />
+                Cómo se extrae
+              </button>
+            ) : undefined
+          }
         >
           {canWrite && gmailPollStatus && (
             <div className="integration-status-box">
@@ -436,7 +453,16 @@ export function IntegrationsPage() {
                 <strong> {gmailPollStatus.interval_seconds}s</strong>
               </p>
               <p className="text-muted">
-                Query: <code>{gmailPollStatus.query || '(vacía)'}</code> · Filtro correos nuevos:
+                Etiquetas:{' '}
+                <strong>
+                  {(gmailPollStatus.labels && gmailPollStatus.labels.length
+                    ? gmailPollStatus.labels.join(', ')
+                    : gmailPollStatus.query) || '(vacía)'}
+                </strong>
+                {' · '}
+                Query: <code>{gmailPollStatus.query || '(vacía)'}</code>
+                {' · '}
+                Filtro correos nuevos:
                 <strong> {gmailPollStatus.mark_unread_only ? 'UNREAD' : 'Todos'}</strong>
               </p>
               <p className="text-muted">
@@ -465,8 +491,31 @@ export function IntegrationsPage() {
                 {feature('gmail_historical')}
                 {feature('gmail_realtime')}
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                {config('gmail_query')}
+              <div className="space-y-3">
+                {settingsMap.get('gmail_query') && (
+                  <GmailLabelsEditor
+                    label={settingsMap.get('gmail_query')!.label}
+                    description={settingsMap.get('gmail_query')!.description}
+                    value={
+                      settingsMap.get('gmail_query')!.config_value ??
+                      settingsMap.get('gmail_query')!.effective_value ??
+                      settingsMap.get('gmail_query')!.env_default ??
+                      ''
+                    }
+                    envDefault={settingsMap.get('gmail_query')!.env_default}
+                    disabled={pendingSettingKey !== undefined}
+                    onSave={(query) =>
+                      updateIntegrationSetting.mutate(
+                        { key: 'gmail_query', configValue: query },
+                        {
+                          onError: () => {
+                            void alertError('Error', 'No se pudieron guardar las etiquetas Gmail.')
+                          },
+                        },
+                      )
+                    }
+                  />
+                )}
                 {config('gmail_poll_interval_seconds')}
               </div>
             </>
@@ -574,43 +623,6 @@ export function IntegrationsPage() {
       {canWrite && (
         <>
           <IntegrationPanel
-            title="Google Sheets"
-            description={
-              <>
-                Credenciales de cuenta de servicio en <code>.env</code>. ID y rango configurables abajo.
-              </>
-            }
-            icon={FileSpreadsheet}
-            badge={
-              status?.google_sheets.configured ? (
-                <HealthBadge label="Listo" tone="success" />
-              ) : (
-                <HealthBadge label="Pendiente" tone="warning" />
-              )
-            }
-          >
-            {feature('google_sheets')}
-            <div className="grid gap-3 md:grid-cols-2">
-              {config('google_spreadsheet_id')}
-              {config('google_spreadsheet_range')}
-            </div>
-            <div className="integration-actions">
-              <button
-                type="button"
-                onClick={handleSheetsSync}
-                disabled={
-                  syncSheets.isPending ||
-                  status?.google_sheets.configured === false ||
-                  !isSettingEnabled('google_sheets')
-                }
-                className="btn-secondary"
-              >
-                {syncSheets.isPending ? 'Sincronizando…' : 'Sincronizar ahora'}
-              </button>
-            </div>
-          </IntegrationPanel>
-
-          <IntegrationPanel
             title="Webhooks"
             description={
               <>
@@ -646,7 +658,68 @@ export function IntegrationsPage() {
             {feature('gemini_ocr')}
             {config('gemini_api_key')}
           </IntegrationPanel>
+
+          <IntegrationPanel
+            title="Sincronización Google Sheets"
+            description={
+              <>
+                Credenciales de cuenta de servicio en <code>.env</code>. ID y rango configurables abajo.
+              </>
+            }
+            icon={FileSpreadsheet}
+            badge={
+              status?.google_sheets.configured ? (
+                <HealthBadge label="Listo" tone="success" />
+              ) : (
+                <HealthBadge label="Pendiente" tone="warning" />
+              )
+            }
+            headerAction={
+              <button
+                type="button"
+                onClick={() => setSheetsMappingOpen(true)}
+                className="btn-ghost inline-flex items-center gap-1.5 text-sm"
+              >
+                <Info size={15} />
+                Ver columnas
+              </button>
+            }
+          >
+            {feature('google_sheets')}
+            <div className="grid gap-3 md:grid-cols-2">
+              {config('google_spreadsheet_id')}
+              {config('google_spreadsheet_range')}
+            </div>
+            <div className="integration-actions">
+              <button
+                type="button"
+                onClick={handleSheetsSync}
+                disabled={
+                  syncSheets.isPending ||
+                  status?.google_sheets.configured === false ||
+                  !isSettingEnabled('google_sheets')
+                }
+                className="btn-secondary"
+              >
+                {syncSheets.isPending ? 'Sincronizando…' : 'Sincronizar ahora'}
+              </button>
+            </div>
+          </IntegrationPanel>
         </>
+      )}
+
+      {canWrite && (
+        <SheetsMappingModal
+          isOpen={sheetsMappingOpen}
+          onClose={() => setSheetsMappingOpen(false)}
+        />
+      )}
+
+      {canWrite && (
+        <GmailExtractionGuideModal
+          isOpen={extractionGuideOpen}
+          onClose={() => setExtractionGuideOpen(false)}
+        />
       )}
 
       {message && <p className="alert-info rounded-lg px-4 py-3 text-sm">{message}</p>}

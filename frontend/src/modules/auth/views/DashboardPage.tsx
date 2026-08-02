@@ -27,6 +27,7 @@ import {
   formatCurrency,
   firstDayOfMonthIsoDate,
   todayIsoDate,
+  startOfWeekIsoDate,
   currentHourInLima,
   formatDateTimeWithSeconds,
 } from '../../finance/application/utils/formatters'
@@ -47,6 +48,7 @@ import { BudgetHealthModal } from '../../finance/views/components/BudgetHealthMo
 import { PaymentTypePieChart } from '../../finance/views/components/PaymentTypePieChart'
 import { CategoryPieChart } from '../../finance/views/components/CategoryPieChart'
 import { hasPermission, useCurrentUser } from '../application/hooks/useAuth'
+import { permissionLabel } from '../application/utils/permissionLabels'
 import type { Role } from '../domain/models/auth.types'
 
 const QUICK_LINKS = [
@@ -88,21 +90,50 @@ const QUICK_LINKS = [
   },
 ] as const
 
+type PeriodPreset = 'month' | 'week' | 'today' | 'custom'
+
 export function DashboardPage() {
   const { data: user } = useCurrentUser()
   const canFinance = hasPermission(user, 'finance:read')
   const [healthModalOpen, setHealthModalOpen] = useState(false)
   const [healthModalTab, setHealthModalTab] = useState<'at_risk' | 'exceeded'>('at_risk')
   const [showPermissions, setShowPermissions] = useState(false)
+  const [periodPreset, setPeriodPreset] = useState<PeriodPreset>('month')
+  const [from, setFrom] = useState(firstDayOfMonthIsoDate())
+  const [to, setTo] = useState(todayIsoDate())
 
-  const monthFilters = { from: firstDayOfMonthIsoDate(), to: todayIsoDate() }
-  const monthYear = monthFilters.from.slice(0, 7)
+  const applyPreset = (preset: PeriodPreset) => {
+    setPeriodPreset(preset)
+    if (preset === 'month') {
+      setFrom(firstDayOfMonthIsoDate())
+      setTo(todayIsoDate())
+    } else if (preset === 'week') {
+      setFrom(startOfWeekIsoDate())
+      setTo(todayIsoDate())
+    } else if (preset === 'today') {
+      const today = todayIsoDate()
+      setFrom(today)
+      setTo(today)
+    }
+  }
+
+  const handleDateChange = (field: 'from' | 'to', value: string) => {
+    setPeriodPreset('custom')
+    if (field === 'from') setFrom(value)
+    else setTo(value)
+  }
+
+  const monthFilters = { from, to }
+  const invalidRange = Boolean(from && to && from > to)
+  const monthYear = from.length >= 7 ? from.slice(0, 7) : firstDayOfMonthIsoDate().slice(0, 7)
   const { data: summary, isLoading: summaryLoading } = useFinanceSummary(monthFilters, {
-    enabled: canFinance,
+    enabled: canFinance && !invalidRange,
   })
   const { data: integrationsStatus } = useIntegrationsStatus({ enabled: canFinance })
   const { data: gmailPollStatus } = useGmailPollStatus()
-  const { data: budgetHealth } = useBudgetHealthBreakdown(canFinance ? monthYear : undefined)
+  const { data: budgetHealth } = useBudgetHealthBreakdown(
+    canFinance && !invalidRange ? monthYear : undefined,
+  )
   const { data: savingsSummary } = useSavingsSummary({ enabled: canFinance })
   const { data: loanSummary } = useLoanSummary({ enabled: canFinance })
 
@@ -144,17 +175,65 @@ export function DashboardPage() {
         title="Dashboard"
         description={
           <>
-            {greeting}, <strong>{user?.username}</strong>. Vista ejecutiva del mes en curso.
+            {greeting}, <strong>{user?.username}</strong>. Vista ejecutiva del periodo seleccionado.
           </>
         }
         icon={LayoutDashboard}
         badge={
           <span className="badge inline-flex items-center gap-1.5">
             <CalendarRange size={14} />
-            {monthFilters.from} → {monthFilters.to}
+            {from} → {to}
           </span>
         }
       />
+
+      {canFinance && (
+        <section className="flex flex-wrap items-center gap-2">
+          {(
+            [
+              { id: 'month' as const, label: 'Este mes' },
+              { id: 'week' as const, label: 'Esta semana' },
+              { id: 'today' as const, label: 'Hoy' },
+            ] as const
+          ).map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => applyPreset(preset.id)}
+              className={
+                periodPreset === preset.id
+                  ? 'btn-primary inline-flex items-center px-3 py-1.5 text-xs'
+                  : 'btn-ghost inline-flex items-center px-3 py-1.5 text-xs'
+              }
+            >
+              {preset.label}
+            </button>
+          ))}
+          <label className="ml-auto flex items-center gap-1.5 text-xs text-muted">
+            Desde
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => handleDateChange('from', e.target.value)}
+              className="input-field !w-auto !py-1.5 text-xs"
+            />
+          </label>
+          <label className="flex items-center gap-1.5 text-xs text-muted">
+            Hasta
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => handleDateChange('to', e.target.value)}
+              className="input-field !w-auto !py-1.5 text-xs"
+            />
+          </label>
+          {invalidRange && (
+            <span className="text-xs" style={{ color: 'var(--premium-danger)' }}>
+              Rango inválido
+            </span>
+          )}
+        </section>
+      )}
 
       <section className="card">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -194,7 +273,7 @@ export function DashboardPage() {
                   <div>
                     <p className="stat-summary__label flex items-center gap-2">
                       <Scale size={14} />
-                      Balance del mes
+                      Balance del periodo
                     </p>
                     <p className="stat-summary__value text-3xl">{formatCurrency(balanceValue)}</p>
                     <p className="mt-1 text-sm text-muted">
@@ -219,7 +298,7 @@ export function DashboardPage() {
                 <StatSummary
                   label="Transacciones"
                   value={String(summary?.transaction_count ?? 0)}
-                  hint="Registradas en el mes"
+                  hint="Registradas en el periodo"
                 />
                 <StatSummary
                   label="Integraciones"
@@ -518,7 +597,11 @@ export function DashboardPage() {
         {showPermissions && (
           <div className="mt-3 flex flex-wrap gap-2 border-t pt-3" style={{ borderColor: 'var(--premium-border)' }}>
             {ensureArray<string>(user?.permissions).map((permission) => (
-              <HealthBadge key={permission} label={permission} tone="primary" />
+              <HealthBadge
+                key={permission}
+                label={permissionLabel(permission)}
+                tone="primary"
+              />
             ))}
           </div>
         )}

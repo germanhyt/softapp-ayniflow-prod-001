@@ -430,11 +430,31 @@ class FinanceRepository:
             .first()
         )
 
-    def create_processed_gmail_message(self, record) -> object:
-        self.db.add(record)
-        self.db.commit()
-        self.db.refresh(record)
-        return record
+    def create_processed_gmail_message(self, record) -> tuple[object, bool]:
+        """Inserta correo procesado.
+
+        Returns:
+            (record, created) — created=False si el gmail_message_id ya existía.
+        """
+        from sqlalchemy.exc import IntegrityError
+
+        from app.modules.finance.domain.models import ProcessedGmailMessage
+
+        try:
+            self.db.add(record)
+            self.db.commit()
+            self.db.refresh(record)
+            return record, True
+        except IntegrityError:
+            self.db.rollback()
+            existing = (
+                self.db.query(ProcessedGmailMessage)
+                .filter(ProcessedGmailMessage.gmail_message_id == record.gmail_message_id)
+                .first()
+            )
+            if existing is not None:
+                return existing, False
+            raise
 
     def get_gmail_credential(self):
         from app.modules.finance.domain.models import FinanceGmailCredential

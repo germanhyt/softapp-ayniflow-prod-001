@@ -839,7 +839,7 @@ body {
   }
 
   .integration-panel__header {
-    @apply border-b px-4 py-3;
+    @apply flex items-start justify-between gap-3 border-b px-4 py-3;
     border-color: var(--premium-border);
   }
 

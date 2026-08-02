@@ -25,8 +25,11 @@ INTEGRATION_SETTINGS_SEED: list[dict] = [
     },
     {
         "key": "gmail_query",
-        "label": "Query / etiqueta Gmail",
-        "description": "Búsqueda Gmail para importar correos (ej. label:PAGOS/BCP/YAPE).",
+        "label": "Etiquetas Gmail",
+        "description": (
+            "Una o más etiquetas Gmail a importar. Ej.: PAGOS/BCP/YAPE. "
+            "Varias se combinan con OR: {label:A OR label:B}."
+        ),
         "category": "gmail",
         "kind": "config",
         "is_enabled": True,
@@ -141,6 +144,8 @@ def seed_integration_settings() -> None:
         for item in INTEGRATION_SETTINGS_SEED:
             existing = db.get(IntegrationSetting, item["key"])
             if existing:
+                existing.label = item["label"]
+                existing.description = item["description"]
                 if existing.kind == "config":
                     existing.env_default = item.get("env_default")
                 continue

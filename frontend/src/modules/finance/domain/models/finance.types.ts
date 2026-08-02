@@ -170,11 +170,35 @@ export interface GmailPollStatus {
   realtime_enabled: boolean
   connected: boolean
   query: string
+  labels?: string[]
   interval_seconds: number
   mark_unread_only: boolean
   last_checked_at: string | null
   last_result: Record<string, unknown> | null
   last_error: string | null
+}
+
+export interface EmailExtractionField {
+  field: string
+  source: string
+  required: boolean
+}
+
+export interface EmailExtractionType {
+  id: string
+  bank: string
+  name: string
+  movement: string
+  tipo_operacion: string
+  subject_patterns: string[]
+  description: string
+  fields: EmailExtractionField[]
+}
+
+export interface EmailExtractionGuide {
+  bank_focus: string
+  notes: string[]
+  types: EmailExtractionType[]
 }
 
 export interface GmailSyncResult {
